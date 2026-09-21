@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central de Automação</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f6;
+    margin: 0;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .header h1 {
+    color: #333;
+    margin: 0 0 10px 0;
+    font-size: 28px;
+  }
+
+  .header p {
+    color: #666;
+    margin: 0;
+    font-size: 16px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+    max-width: 800px;
+    width: 100%;
+  }
+
+  .card {
+    background: #fff;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 40px 20px;
+    text-align: center;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  }
+
+  .card:hover {
+    border-color: #007bff;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 123, 255, 0.1);
+  }
+
+  .icon {
+    font-size: 45px;
+    margin-bottom: 15px;
+    display: inline-block;
+  }
+
+  .card h3 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    color: #222;
+  }
+
+  .card .tag {
+    display: inline-block;
+    background: #e9ecef;
+    color: #495057;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+  }
+
+  /* Cores específicas para as tags (Sofico e ASC) */
+  .tag.sofico { background: #cce5ff; color: #004085; }
+  .tag.asc { background: #d4edda; color: #155724; }
+
+  /* Ajuste para telas menores (celulares) */
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Central de Leitores</h1>
+  <p>Selecione a ferramenta que deseja utilizar</p>
+</div>
+
+<div class="grid">
+  <!-- 1. Leitor de Boletos - Sofico -->
+  <!-- Altere o href para o nome do arquivo HTML correspondente -->
+  <a href="boletos_sofico.html" class="card">
+    <div class="icon">📄</div>
+    <h3>Leitor de Boletos</h3>
+    <span class="tag sofico">SOFICO</span>
+  </a>
+
+  <!-- 2. Leitor de Boletos - ASC -->
+  <a href="boletos_asc.html" class="card">
+    <div class="icon">🧾</div>
+    <h3>Leitor de Boletos</h3>
+    <span class="tag asc">ASC</span>
+  </a>
+
+  <!-- 3. Leitor de Contrato - Sofico -->
+  <a href="contratos_sofico.html" class="card">
+    <div class="icon">🤝</div>
+    <h3>Leitor de Contrato</h3>
+    <span class="tag sofico">SOFICO</span>
+  </a>
+
+  <!-- 4. Leitor de Contrato - ASC -->
+  <a href="contratos_asc.html" class="card">
+    <div class="icon">✍️</div>
+    <h3>Leitor de Contrato</h3>
+    <span class="tag asc">ASC</span>
+  </a>
+</div>
+
+</body>
+</html>
