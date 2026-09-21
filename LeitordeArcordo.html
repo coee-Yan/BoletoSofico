@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leitor de Acordos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #eef2f5; padding: 30px; margin: 0; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; }
+        h1 { font-size: 24px; color: #2c3e50; margin-top: 0; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .upload-area { border: 2px dashed #3498db; padding: 40px; text-align: center; border-radius: 8px; background-color: #f7fbfe; margin-bottom: 20px; transition: 0.3s; }
+        .upload-area:hover { background-color: #eaf5ff; }
+        input[type="file"] { display: none; }
+        .btn-upload { background-color: #3498db; color: white; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; display: inline-block; }
+        .btn-upload:hover { background-color: #2980b9; }
+        .info { margin-top: 15px; font-size: 14px; color: #555; }
+        textarea { width: 100%; height: 250px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; font-size: 13px; white-space: pre; overflow: auto; resize: vertical; margin-bottom: 15px; background-color: #fafafa; }
+        .btn-action { background-color: #27ae60; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; transition: 0.3s; }
+        .btn-action:hover { background-color: #219150; }
+        .btn-action:disabled { background-color: #95a5a6; cursor: not-allowed; }
+        #status { margin-top: 15px; font-weight: bold; text-align: center; font-size: 15px; }
+        .success { color: #27ae60; }
+        .processing { color: #e67e22; }
+        .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #95a5a6; border-top: 1px solid #eee; padding-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Leitor de Acordos Assinados</h1>
+    
+    <div class="upload-area">
+        <label for="pdfFiles" class="btn-upload">Selecionar PDFs (Lote)</label>
+        <input type="file" id="pdfFiles" accept="application/pdf" multiple />
+        <div class="info">Selecione um ou vários arquivos PDF ao mesmo tempo.</div>
+    </div>
+
+    <label for="resultado"><strong>Resultado Final (Pronto para Excel):</strong></label>
+    <textarea id="resultado" readonly placeholder="Os dados processados aparecerão aqui..."></textarea>
+    
+    <button id="btnCopiar" class="btn-action" onclick="copiarParaExcel()" disabled>Copiar Tudo para o Excel</button>
+    <div id="status"></div>
+
+    <div class="footer">
+        Versão 1.1 - Atualizado em: 21/09/2026 às 17:24
+    </div>
+</div>
+
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    const inputFiles = document.getElementById('pdfFiles');
+    const textareaResultado = document.getElementById('resultado');
+    const btnCopiar = document.getElementById('btnCopiar');
+    const statusDiv = document.getElementById('status');
+
+    const mesesD4Sign = {
+        'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
+        'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
+    };
+
+    inputFiles.addEventListener('change', async function(event) {
+        const arquivos = event.target.files;
+        if (arquivos.length === 0) return;
+
+        textareaResultado.value = "";
+        btnCopiar.disabled = true;
+        statusDiv.className = "processing";
+        
+        let todasAsLinhasExcel = [];
+        let arquivosProcessados = 0;
+
+        for (let i = 0; i < arquivos.length; i++) {
+            const arquivo = arquivos[i];
+            statusDiv.textContent = `Processando arquivo ${i + 1} de ${arquivos.length}: ${arquivo.name}...`;
+            
+            try {
+                const textoLimpo = await extrairTextoDoPDF(arquivo);
+                const linhaGerada = aplicarRegrasDeNegocio(textoLimpo, arquivo.name);
+                todasAsLinhasExcel.push(linhaGerada);
+            } catch (erro) {
+                console.error(`Erro no arquivo ${arquivo.name}:`, erro);
+                todasAsLinhasExcel.push(`ERRO DE LEITURA\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t${arquivo.name}`);
+            }
+            arquivosProcessados++;
+        }
+
+        textareaResultado.value = todasAsLinhasExcel.join("\n");
+        
+        statusDiv.className = "success";
+        statusDiv.textContent = `✅ ${arquivosProcessados} documento(s) processado(s) com sucesso!`;
+        btnCopiar.disabled = false;
+        
+        inputFiles.value = "";
+    });
+
+    async function extrairTextoDoPDF(file) {
+        return new Promise((resolve, reject) => {
+            const fileReader = new FileReader();
+            fileReader.onload = async function(e) {
+                try {
+                    const typedArray = new Uint8Array(e.target.result);
+                    const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                    let textoCompleto = "";
+
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const pagina = await pdf.getPage(i);
+                        const conteudo = await pagina.getTextContent();
+                        const textoPagina = conteudo.items.map(item => item.str).join(' ');
+                        textoCompleto += textoPagina + " ";
+                    }
+
+                    let textoNormalizado = textoCompleto.replace(/\s+/g, ' ').trim();
+                    resolve(textoNormalizado);
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        });
+    }
+
+    function aplicarRegrasDeNegocio(texto, nomeArquivo) {
+        const dados = { B: "", C: "", D: "", E: "", F: "", G: "", H: "", T: "" };
+
+        // REGRA 1 - Condomínio (Coluna B)
+        dados.B = nomeArquivo.replace(/\.pdf$/i, '').trim();
+
+        // REGRA 2 - Unidade e Bloco (Coluna C)
+        const regexUnidade = /da unidade\s+(.*?)\s*(?:do\b|da\b|,)/i;
+        const matchUnidade = texto.match(regexUnidade);
+        if (matchUnidade) dados.C = matchUnidade[1].trim();
+
+        // REGRA 3 - Nome do Titular (Coluna D)
+        const regexTitular = /DEVEDOR:\s*([^,]+)/i;
+        const matchTitular = texto.match(regexTitular);
+        if (matchTitular) dados.D = matchTitular[1].trim();
+
+        // REGRA E - E-mail do Devedor (Coluna E) - Cláusula 3
+        const regexEmail = /endereço de e-mail:\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i;
+        const matchEmail = texto.match(regexEmail);
+        if (matchEmail) dados.E = matchEmail[1].trim();
+
+        // REGRA 4 - Número de Parcelas (Coluna F)
+        const regexParcelas = /pago em\s+(\d+)\s*\(/i;
+        const matchParcelas = texto.match(regexParcelas);
+        if (matchParcelas) dados.F = matchParcelas[1].trim();
+
+        // REGRA 5 - Data de Vencimento (Coluna G)
+        const regexVencimento = /vencendo-se a primeira em\s+(\d{2})\/\d{2}\/\d{4}/i;
+        const matchVencimento = texto.match(regexVencimento);
+        if (matchVencimento) dados.G = `Todo dia ${matchVencimento[1]}`;
+
+        // REGRA 6 - Data de Emissão (Coluna H)
+        const indexEventos = texto.toLowerCase().indexOf("eventos do documento");
+        if (indexEventos !== -1) {
+            const textoEventos = texto.substring(indexEventos);
+            const regexDatasD4 = /(\d{2})\s+([a-zA-Z]{3})\s+(\d{4})/g;
+            let datasEncontradas = [...textoEventos.matchAll(regexDatasD4)];
+            
+            if (datasEncontradas.length > 0) {
+                let alvo = datasEncontradas.length >= 3 ? datasEncontradas[2] : datasEncontradas[datasEncontradas.length - 1];
+                let dia = alvo[1];
+                let mesStr = alvo[2].toLowerCase();
+                let ano = alvo[3];
+                let mesNum = mesesD4Sign[mesStr] || '01'; 
+                
+                dados.H = `${dia}/${mesNum}/${ano}`;
+            }
+        }
+
+        // REGRA 7 - Valor do Acordo + R$ 5,50 (Coluna T)
+        const regexValor = /exigível de\s*R\$\s*([\d\.\s]+,\s*\d{2})/i;
+        const matchValor = texto.match(regexValor);
+        if (matchValor) {
+            let valorCru = matchValor[1].replace(/[\.\s]/g, '').replace(',', '.');
+            let valorFloat = parseFloat(valorCru);
+            
+            if (!isNaN(valorFloat)) {
+                let valorComAcrescimo = valorFloat + 5.50;
+                dados.T = valorComAcrescimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+        }
+
+        // Montagem da linha (Índices: A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7... T=19)
+        const colunas = new Array(20).fill("");
+        colunas[1] = dados.B;  
+        colunas[2] = dados.C;  
+        colunas[3] = dados.D;  
+        colunas[4] = dados.E;  
+        colunas[5] = dados.F;  
+        colunas[6] = dados.G;  
+        colunas[7] = dados.H;  
+        colunas[19] = dados.T; 
+
+        return colunas.join("\t");
+    }
+
+    function copiarParaExcel() {
+        if (!textareaResultado.value) return;
+        
+        textareaResultado.select();
+        textareaResultado.setSelectionRange(0, 99999);
+        
+        navigator.clipboard.writeText(textareaResultado.value).then(() => {
+            statusDiv.textContent = "Copiado com sucesso! Agora vá no Excel, clique na célula A (da linha vazia) e pressione Ctrl+V.";
+            statusDiv.className = "success";
+        }).catch(err => {
+            document.execCommand('copy');
+            statusDiv.textContent = "Copiado usando método alternativo! Cole no Excel.";
+        });
+    }
+</script>
+
+</body>
+</html>
