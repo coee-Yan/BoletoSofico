@@ -79,9 +79,10 @@
     font-size: 13px;
     font-weight: bold;
     letter-spacing: 0.5px;
+    text-transform: uppercase;
   }
 
-  /* Cores específicas para as tags (Sofico e ASC/Acordo) */
+  /* Cores específicas para as tags (Sofico e ASC) */
   .tag.sofico { background: #cce5ff; color: #004085; }
   .tag.asc { background: #d4edda; color: #155724; }
 
@@ -99,31 +100,31 @@
 </div>
 
 <div class="grid">
-  <!-- 1. Leitor de Boletos - Sofico (Apontando para LeitorSofico.html) -->
+  <!-- 1. Leitor de Boletos - Sofico -->
   <a href="LeitorSofico.html" class="card">
     <div class="icon">📄</div>
     <h3>Leitor de Boletos</h3>
     <span class="tag sofico">SOFICO</span>
   </a>
 
-  <!-- 2. Leitor de Acordos/ASC (Apontando para LeitordeArcordo.html) -->
+  <!-- 2. Leitor de Acordos - Sofico -->
   <a href="LeitordeArcordo.html" class="card">
     <div class="icon">🧾</div>
-    <h3>Leitor de Arcordos</h3>
-    <span class="tag asc">Sofico</span>
+    <h3>Leitor de Acordos</h3>
+    <span class="tag sofico">SOFICO</span>
   </a>
 
-  <!-- 3. Leitor de Contrato - Sofico (Vazio por enquanto) -->
+  <!-- 3. Leitor de Boletos - ASC (Vazio por enquanto) -->
   <a href="#" class="card">
-    <div class="icon">🤝</div>
-    <h3>Leitor de Contrato</h3>
-    <span class="tag sofico">ASC</span>
+    <div class="icon">📄</div>
+    <h3>Leitor de Boletos</h3>
+    <span class="tag asc">ASC</span>
   </a>
 
-  <!-- 4. Leitor de Contrato - ASC (Vazio por enquanto) -->
+  <!-- 4. Leitor de Acordos - ASC (Vazio por enquanto) -->
   <a href="#" class="card">
-    <div class="icon">✍️</div>
-    <h3>Leitor de Contrato</h3>
+    <div class="icon">🧾</div>
+    <h3>Leitor de Acordos</h3>
     <span class="tag asc">ASC</span>
   </a>
 </div>
