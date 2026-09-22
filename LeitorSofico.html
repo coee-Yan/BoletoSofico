@@ -17,9 +17,31 @@
   .dica { font-size: 13px; color: #666; margin-top: 10px; }
   .status { font-weight: bold; color: #d32f2f; margin-bottom: 10px; }
   .footer-version { text-align: center; font-size: 11px; color: #888; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px; }
+  
+  /* ESTILOS DO BOTÃO VOLTAR */
+  .btn-voltar {
+    position: fixed;
+    bottom: 80px; /* Mais alto, acima do rodapé */
+    left: 20px;
+    background-color: #6c757d;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease;
+    z-index: 1000;
+  }
+  .btn-voltar:hover {
+    background-color: #5a6268;
+  }
 </style>
 </head>
 <body>
+
+<!-- BOTÃO VOLTAR FLUTUANTE -->
+<a href="index.html" class="btn-voltar">⬅ Voltar</a>
 
 <h2>Leitor de Boletos em Lote (Sofico)</h2>
 <div class="box">
@@ -38,7 +60,7 @@
 </div>
 
 <div class="footer-version">
-  Versão 2026-09-21 10:14
+  Versão 2026-09-22 09:30
 </div>
 
 <script>
@@ -317,3 +339,5 @@
 </script>
 </body>
 </html>
+
+```
