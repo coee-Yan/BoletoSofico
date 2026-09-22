@@ -1,435 +1,299 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Leitor de Boletos - Versão Definitiva</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-<style>
-  * { box-sizing: border-box; }
-  
-  body { 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    margin: 0; 
-    background-color: #f4f7f6; 
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leitor de Acordos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { 
+            background-color: #eef2f5; 
+            margin: 0; 
+            color: #333; 
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
 
-  .main-container {
-    flex: 1;
-    width: 100%;
-    max-width: 850px;
-    margin: 0 auto;
-    padding: 40px 20px;
-    display: flex;
-    flex-direction: column;
-  }
+        .container { 
+            max-width: 900px; 
+            width: 100%;
+            margin: 40px auto; 
+            background: #fff; 
+            padding: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            position: relative;
+            flex: 1;
+        }
 
-  h2 { color: #333; text-align: center; margin-bottom: 30px; }
+        /* Estilo do Botão Voltar Fixo */
+        .btn-voltar {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: background 0.3s;
+            z-index: 1000;
+        }
+        .btn-voltar:hover { background-color: #5a6268; }
 
-  /* Estilo do Botão Voltar Fixo */
-  .btn-voltar {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    background-color: #6c757d;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 14px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-    transition: background 0.3s;
-    z-index: 1000;
-  }
-  .btn-voltar:hover { background-color: #5a6268; }
-
-  /* Área de Arrastar e Soltar */
-  .drop-zone { 
-    border: 2px dashed #007bff; 
-    padding: 40px 20px; 
-    text-align: center; 
-    margin-bottom: 20px; 
-    background: #fff; 
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  .drop-zone.dragover {
-    background-color: #e9ecef;
-    border-color: #0056b3;
-    transform: scale(1.02);
-  }
-  .drop-zone span { font-size: 18px; font-weight: bold; color: #007bff; display: block; margin-bottom: 10px; }
-  .drop-zone .dica { font-size: 13px; color: #666; }
-  .drop-zone input[type="file"] { display: none; }
-
-  /* Botão de Copiar */
-  .btn-copiar {
-    background: #28a745; 
-    color: white; 
-    border: none; 
-    padding: 15px 20px; 
-    cursor: pointer; 
-    border-radius: 5px; 
-    font-size: 16px; 
-    width: 100%; 
-    font-weight: bold;
-    transition: background 0.3s;
-    margin-top: 10px;
-  }
-  .btn-copiar:hover { background: #218838; }
-  .btn-copiar:disabled { background: #6c757d; cursor: not-allowed; }
-
-  /* Área de Resultados */
-  #output { display: none; margin-bottom: 30px; }
-  .status { font-weight: bold; color: #d32f2f; margin-bottom: 15px; font-size: 18px; text-align: center;}
-  .result { background: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 20px; font-family: monospace; font-size: 13px; max-height: 250px; overflow-y: auto; line-height: 1.6; }
-  textarea { width: 100%; height: 160px; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; white-space: pre; overflow-x: scroll; resize: vertical;}
-  
-  /* Rodapé Exato */
-  .footer-version { 
-    text-align: center; 
-    font-size: 12px; 
-    color: #888; 
-    background-color: #e9ecef;
-    padding: 15px;
-    border-top: 1px solid #ddd; 
-    width: 100%;
-  }
-</style>
+        h1 { font-size: 24px; color: #2c3e50; margin-top: 0; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        
+        /* Área de Arrastar e Soltar (Drag & Drop) */
+        .upload-area { 
+            border: 2px dashed #3498db; 
+            padding: 40px; 
+            text-align: center; 
+            border-radius: 8px; 
+            background-color: #f7fbfe; 
+            margin-bottom: 20px; 
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .upload-area:hover, .upload-area.dragover { background-color: #eaf5ff; border-color: #2980b9; transform: scale(1.01); }
+        
+        input[type="file"] { display: none; }
+        .btn-upload { background-color: #3498db; color: white; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; display: inline-block; }
+        .btn-upload:hover { background-color: #2980b9; }
+        .info { margin-top: 15px; font-size: 14px; color: #555; }
+        
+        textarea { width: 100%; height: 250px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; font-size: 13px; white-space: pre; overflow: auto; resize: vertical; margin-bottom: 15px; background-color: #fafafa; }
+        
+        .btn-action { background-color: #27ae60; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; transition: 0.3s; }
+        .btn-action:hover { background-color: #219150; }
+        .btn-action:disabled { background-color: #95a5a6; cursor: not-allowed; }
+        
+        #status { margin-top: 15px; font-weight: bold; text-align: center; font-size: 15px; }
+        .success { color: #27ae60; }
+        .processing { color: #e67e22; }
+        
+        .footer { text-align: center; font-size: 12px; color: #95a5a6; background-color: #e9ecef; padding: 15px; border-top: 1px solid #eee; width: 100%; margin-top: auto; }
+    </style>
 </head>
 <body>
 
-<!-- Botão Voltar apontando para a tela inicial -->
+<!-- Botão Voltar para a Tela Inicial -->
 <a href="index.html" class="btn-voltar">⬅ Voltar</a>
 
-<div class="main-container">
-  <h2>Leitor de Boletos em Lote (Versão Definitiva)</h2>
-  
-  <!-- Área de Drag and Drop Automática -->
-  <div class="drop-zone" id="dropZone">
-    <span id="dropZoneText">Clique aqui e selecione os Boletos PDF ou arraste-os aqui</span>
-    <div class="dica">Borderôs vão para análise manual e os com falhas vão para o final da lista.</div>
-    <input type="file" id="fileInput" accept="application/pdf" multiple>
-  </div>
-
-  <div id="output">
-    <div class="status" id="statusText">Processando...</div>
-    <h3>1. Resumo Visual:</h3>
-    <div class="result" id="previewText"></div>
-    <h3>2. Dados Prontos para o Excel:</h3>
-    <textarea id="textoBrutoExcel" readonly></textarea>
+<div class="container">
+    <h1>Leitor de Acordos Assinados</h1>
     
-    <button id="copyBtn" class="btn-copiar">Copiar Linhas para o Excel</button>
-  </div>
+    <!-- Área Drag & Drop -->
+    <div class="upload-area" id="dropZone">
+        <label for="pdfFiles" class="btn-upload">Selecionar PDFs (Lote)</label>
+        <input type="file" id="pdfFiles" accept="application/pdf" multiple />
+        <div class="info">Selecione os arquivos ou arraste e solte-os aqui.</div>
+    </div>
+
+    <label for="resultado"><strong>Resultado Final (Pronto para Excel):</strong></label>
+    <textarea id="resultado" readonly placeholder="Os dados processados aparecerão aqui..."></textarea>
+    
+    <button id="btnCopiar" class="btn-action" onclick="copiarParaExcel()" disabled>Copiar Tudo para o Excel</button>
+    <div id="status"></div>
 </div>
 
-<div class="footer-version">
-  Versão 2026-09-21 10:14
+<div class="footer">
+    Versão 1.1 - Atualizado em: 21/09/2026 às 17:24
 </div>
 
 <script>
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-  // Lista Oficial de Condomínios (original mantida)
-  const listaOficialCondominios = [
-    "COND CONJUNTO PRIVE JARDIM DOS IPES", "CONDOMINIO DO EDIFICIO CASTELO DE LAURIER", "CONDOMINIO RESIDENCIAL PLANO & ESTACAO CAMPO LIMPO SERRA RIBEIRO II",
-    "CONDOMINIO RESIDENCIAL PLANO & JARDIM SUL", "CONDOMINIO DO EDIFICIO VILA HILDA", "CONDOMINIO DO EMPREENDIMENTO HABITACIONAL CIDADES DO MUNDO III",
-    "COND EDIF JAQUEIRA PARK AROLDO FONSECA LIMA", "CONDOMINIO RESIDENCIAL PLANO & BAIRRO DO LIMAO BARTOLOMEU DO CANTO", "CONDOMINIO RESIDENCIAL PLANO & SACOMA ANTONIO GOMES II",
-    "CONDOMINIO DO EDIFICIO RESIDENCIAL CIDADES DO MUNDO LIFE", "CONDOMINIO DO RESIDENCIAL ENGENHO POETA", "CONDOMINIO DO EDIFICIO RESIDENCIAL DULCINEA OLIVEIRA",
-    "CONDOMINIO DOS EDIFICIOS MANOEL QUINTAS E JULIA QUINTAS", "CONDOMINIO DO EMPREENDIMENTO VILLAGIO PRACAS RESIDENCIAS", "CONDOMINIO RESIDENCIAL PLANO & LARGO DO CAMBUCI JOSE BENTO",
-    "CONDOMINIO RESIDENCIAL PLANO & ESTACAO VILA SONIA CAMINHO DE ENGENHO", "CONDOMINIO RESIDENCIAL PLANO & PORTAL BARRA FUNDA VILA MARQUES", "CONDOMINIO DO CONJ RESIDENCIAL MARCOS FREIRE GL C",
-    "CONDOMINIO RESIDENCIAL PLANO & GIOVANNI GRONCHI", "CONDOMINIO DO CONJUNTO RESIDENCIAL MONTERREY", "CONDOMINIO DE CONSTRUCAO DO EDIFICIO BEACH CLASS VERANO",
-    "COND EDIF CENTRO EMPRESARIAL ITAIGARA SUL", "COND EDIFICIO RESIDENCE PORT GREVILLE", "CONDOMINIO RESIDENCIAL PLANO & CUPECE CUPECE I", "CONDOMINIO RESIDENCIAL PLANO & FLORADA IPE",
-    "CONDOMINIO RESIDENCIAL MALIBU BEACH HOUSE", "CONDOMINIO DE CONSTRUCAO DO EDIFICIO ARTHUR BRUNO SCHWAMBACH", "CONDOMINIO DO EMPREENDIMENTO MAX CARNEIROS SUITES",
-    "CONDOMINIO RESIDENCIAL EDIFICIO PASSIONE", "CONDOMINIO RESIDENCIAL PLANO & VILA CAMBUCI ARACA", "COND RESIDENCIAL DO EDIFICIO HADIMARCK", "COND EDIFICIO SAO MARCOS",
-    "CONDOMINIO RESIDENCIAL FOR LIFE COLINAS CLUBE", "CONDOMINIO RESIDENCIAL VILLAGGIO VERONA", "CONDOMINIO RESIDENCIAL PARQUE CENTRAL", "CONDOMINIO RESIDENCIAL METROCASA MORUMBI",
-    "CONDOMINIO DO EDIFICIO SOLAR HENRIQUE VALADARES", "CONDOMINIO DO EDIFICIO STUDIOS MARINA BRACUHY", "CONDOMINIO DO EDIFICIO RESIDENCIAL LIMA DRUMOND", "CONDOMINIO DO EDIFICIO BARAO DE PAISSANDU",
-    "CONDOMINIO DO EDIFICIO ART. 2 DINA DE OLIVEIRA", "CONDOMINIO DO EDIFICIO CORONEL ALFREDO DA FONSECA", "CONDOMINIO DO EDIFICIO COLUMBUS", "CONDOMINIO DO EDIFICIO BAIA DE GUANABARA",
-    "CONDOMINIO DO EDIFICIO ESTACAO DAS PAINEIRAS", "CONDOMINIO DO EDIFICIO MONT SAINT HELENE", "CONDOMINIO DO EDIFICIO DAVID BECKER", "CONDOMINIO DO EDIFICIO BARAO DE UBA",
-    "CONDOMINIO DO EDIFICIO CAIQUE", "COND.DO EDF. CHATEAU DES ARDENNES", "CONDOMINIO DO EDIFICIO MAISON FLAMBOYANT", "CONDOMINIO PORTO MARINA BRACUHY", "RESIDENCIAL BOSQUE DOS IPES I",
-    "THE GARDENS SPRING", "CONDOMINIO OLIMPIC MBGUCCI", "CONDOMINIO DO EDIFICIO JOSE ROCHA DE ARAUJO", "CONDOMINIO DO EDIFICIO FABIO", "CONDOMINIO DO EDIFICIO SOLAR DO CAPIBARIBE",
-    "EDIFICIO POCO PRINCE", "CONDOMINIO DO EDIFICIO CRISTAL PARK", "CONDOMINIO DO EDIFICIO RIO JURUA", "CONDOMINIO DO EDIFICIO QUALITY", "CONDOMINIO RESIDENCIAL VILLA DAS MACIEIRAS",
-    "CONDOMINIO DO EDIFICIO IGUABA", "CONDOMINIO DO EDIFICIO SAN GIMINIANO", "CONDOMINIO HOTEL RESIDENCIAL PORTO ATHENAS", "CONDOMINIO BOULEVARD DO PARQUE", "CONDOMINIO EDIFICIO AMAPA",
-    "EMPREENDIMENTO AURORA JARDIM", "CONDOMINIO DO ED FORNOVO", "CONDOMINIO JARDIM GUEDALA", "CONDOMINIO NOVOLAR VIENA", "CONDOMINIO DO EDIFICIO PLACE DE LOPERA", "RESIDENCIAL PADRE ROSER",
-    "CONDOMINIO URBAN LOFT", "CONDOMINIO MORADA RECIFE ANTIGO", "CONDOMINIO RESERVA DE ALDEIA GIARDINO", "CONDOMINIO RESIDENCIAL RESERVA DO PARQUE 2", "CONDOMINIO DO EDIFICIO MARINHO REIS",
-    "CONDOMINIO DO EDIFICIO JEQUITIBA", "CONDOMINIO ILHA DE SANTANA", "CONDOMINIO RESIDENCIAL VILA ESMERALDA", "CONDOMINIO DO EDIFICIO CAMBORIU", "CONDOMINIO DO EDIFICIO VILLA MADALENA",
-    "CONDOMINIO DO EDIFICIO TATIANA", "CONDOMINIO EDIFICIO EMPRESARIAL MASTER", "CONDOMINIO DO EDIFICIO MARIA NICE", "CONDOMINIO RESIDENCIAL ESTRELAS FULL CONDOMINIUM", "CONDOMINIO EDIFICIO OMEGA",
-    "CONDOMINIO DO EDIFICIO DONA CECY", "CONDOMINIO DO EDIFICIO MONTSERRAT", "TERUZ", "GELITO", "VITORIA", "CONDOMINIO DO EDIFICIO INFINITI II", "CONDOMINIO DO EDIFICIO MIRANTE DO FRIO RESIDENCE",
-    "CONDOMINIO RESIDENCIAL OURO PRETO II", "EDIFICIO RESIDENCIAL PREMIATTO", "CONDOMINIO EASY CIDADE UNIVERSITARIA", "CONDOMINIO DO EDIFICIO MARIA ROSA", "CONDOMINIO DO EDIFICIO AZUL",
-    "CONDOMINIO SAN GIACOMO II", "CONDOMINIO EDIFICIO BELVEDERE", "VIVAZ JARDIM PIRITUBA 2", "CONDOMINIO DO EDIFICIO RESIDENCIAL CATOLE", "CONDOMINIO UNIQUE LIVING CLUB", "CONDOMINIO RESIDENCIAL RESERVA DO PARQUE",
-    "SELETO RESIDENCIAL OLARIA", "CONDOMINIO DO EDIFICIO JARDINS APIPUCOS", "CONDOMINIO DO EDIFICIO EMPRESARIAL SANTANA", "EDIFICIO JAQUEIRA PLAZA", "RESIDENCIAL SHANGRILA", "CONDOMINIO DO EDIFICIO MARIANA RODRIGUES",
-    "CONDOMINIO DO EDIFICIO SETUBAL PRINCE", "CONDOMINIO MAXHAUS BERRINI", "CONDOMINIO DO EDIFICIO SÃO SIMÃO", "RESIDENCIAL VILLA DAS PALMEIRAS", "VIVA VIDA IGARASSU", "CONDOMINIO PARQUE SEVILHA",
-    "CONDOMINIO DO EDIFICIO ELGRECO", "EDIFICIO TERRAZZA", "CONDOMINIO DO EDIFICIO PORTO RAVENA", "CONDOMINIO RESIDENCIAL PLENO MORUMBI", "CONDOMINIO RESIDENCIAL RESERVA DO ALTO", "EDIFICIO LUAR DO PARQUE",
-    "PROJETO IMOBILIARIO E 37", "CONDOMINIO DO EDIFICIO SITIO DA TRINDADE RESIDENCE", "EDIFICIO MIRANTE DE PORTO", "RESIDENCIAL MORAR BEM BARREIRO", "CONDOMINIO DO EDIFICIO MARIA ISADORA E MARIA ISABELA",
-    "CONDOMINIO RESIDENCIAL GRAN MARINE", "RESIDENCIAL RUBI", "CONDOMINIO RESIDENCIAL VILLA DAS SERINGUEIRAS", "CONDOMINIO WE CACHOEIRINHA", "SAN FAUZIANE", "CONDOMINIO DO EDIFICIO BOKOR",
-    "CONDOMINIO DO EDIFICIO COLORADO", "EDIFICIO MORADA NEREU GUERRA", "CONDOMINIO VIBRA CAMBUCI", "CONDOMINIO CUPE LIVING", "CONDOMINIO DO ANCORAR FLAT RESORT", "CONDOMINIO RESIDENCIAL JARDIM DOS ANTURIOS",
-    "CONDOMINIO RESIDENCIAL JACARECICA", "CONDOMINIO DO PARQUE RESIDENCIAL 21 DE ABRIL", "CONDOMINIO DO EDIFICIO SAUBEL", "EDIFICIO BELACAP", "EDIFICIO PRACA DOS BAOBAS", "Solar Di Cavalcanti",
-    "CONDOMINIO EDIFICIO JARDIM LAGOMAR", "CONDOMINIO DO EDIFICIO TOUR DE NICE", "RESIDENCE CLUB GENNY ANDRE GOMES", "CONDOMNIO TWIN TOWERS THE DUPLEX", "TAMAREIRAS", "CONDOMINIO MORADA RECIFE COLONIAL QUINTA DE SANTO ANTONIO",
-    "CONDOMINIO JARDINS DA VILA", "EDIFICIO OCEAN VIEW", "CONDOMINIO DO EDIFICIO RESIDENCIAL CIDADES DO MUNDO LIFE", "CONDOMINIO ELEVA CUPECE", "CONDOMINIO MORADA RECIFE COLONIAL QUINTA DA BOA VISTA",
-    "CONDOMINIO NELSON BATISTA ALAMEDA DOS IPES", "VIBRA INTERLAGOS", "CONDOMINIO ESTEVAO V", "CONDOMINIO EDIFICIO GRAND LAVOISIER", "EDIFICIO ALAMEDA DOS NOBRES", "CONDOMINIO DO EDF. PRAIA DE ITAGUARE",
-    "CONDOMINIO RANCHO DO VALE", "CONDOMINIO DO EDIFICIO PALAZZO SAN PIETRO", "CONDOMINIO DO EDF SOLAR TRINDADE", "EDIFICIO PORTO HORIZONTE", "ACORES TAMANDARE FLATS", "CONDOMINIO EDIFICIO MARROCOS",
-    "CONDOM EDIFICIO OLYMPIA", "CONDOMINIO DO EDIFICIO ROSA GARDEN", "GARANTIZA SOLUCOES FINANCEIRAS LTDA", "CONDOMINIO DO EDIFICIO TAPAJOS", "EDIFICIO LIBERDADE LIFE CLUB", "CONDOMINIO DO EDIFICIO TIGNANELLO",
-    "EDIFICIO PRACA DAS AURORAS", "CONDOMINIO DO EDIFICIO BERLINCK", "EDIFICIO TOP HILL", "CONDOMINIO EDIFICIO CAETANA DEL NERO", "CONDOMINIO EDIFICIO ART POMPEIA", "CONDOMINIO DO EDIFICIO LOTUS",
-    "CONDOMINIO DO EDIFICIO SAMBAIBA", "CONDOMINIO EDIFICIO PLAZA POMPEIA", "CONDOMINIO ELEVE CUPECE LOTE 2", "EDIFICIO LUAR DO ARRAIAL", "MILA ROOFTOP", "CONDOMINIO DO EDIFICIO PRIMAVera COLONIAL",
-    "CONDOMINIO DO EDIFICIO PRAIA DE BLANKENESE", "CONDOMINIO DO EDIFICIO CAVALCANTI DE ALBUQUERQUE", "CONDOMINIO DO EDIFICIO PARK HOME", "CONDOMINIO DO EDIFICIO JOA", "CONDOMINIO DO EDIFICIO PRAIA DA BANDEIRA",
-    "CONDOMINIO DE OBRA DO EMPRESARIAL GRAND TOWER BOA VISTA", "VIBRA JURUBATUBA", "VIBRA IMIRIM", "CONDOMINIO DO EDIFICIO MARIMBAS", "CONDOMINIO DO EDIFICIO LOWNDES", "EDIFICIO RESIDENCIAL ALTO DO IMBUI",
-    "CONDOMINIO EDIFICIO LE BARON", "SUBCONDOMINIO SUL POLINESIA", "TOLIVE RIVERSIDE", "CONDOMINIO DO EDIFICIO JARDINS DA BOA VISTA", "CONDOMINIO ALPHA EMPRESARIAL", "CONDOMINIO RESIDENCIAL ILHAS VIVENCE",
-    "EDIFICIO PALACIO BOA VISTA", "CONDOMINIO DO EDIFICIO CUPE EXCLUSIVE", "CONDOMINIO DO EDIFICIO VEGA AZUL", "CONSOMINIO DO EDIFICIO LADY CONSTANT", "CONDOMINIO DO EDIFICIO PORTO GDANSK",
-    "CONDOMINIO RESIDENCIAL OURO PRETO", "EDIFICIO CUPE GARDEN", "EDIFICIO MARINA DO CUPE", "EDIFICIO CASA FORTE PRINCE", "CONDOMINIO DO EMPREENDIMENTO MAX CARNEIROS SUITES", "CONDOMINIO DO EDIFICIO FLOW BOA VIAGEM",
-    "SP LIFE", "CONDOMINIO DO EDIFICIO SAMSARA", "CONDOMINIO LIKE CLUBE BOA VIAGEM", "CONDOMINIO DO EDIFICIO RITA BANDEIRA DE OLIVEIRA", "EDIFICIO SOBRADO CARLOS PENA FILHO", "CONDOMINIO DO EDIFICIO PRINCIPE DE SEGOVIA",
-    "CONDOMINIO HARBOR LIVING", "CONDOMINIO DO EDIFICIO STUDIO EVEREST", "GALAPAGOS BEACH RESIDENCE", "CONDOMINIO DO EDIFICIO COSTA BLANCA", "CONDOMINIO DO EDIFICIO ALMIRANTE BITTENCOURT", "CONDOMINIO MAGNUS RESIDENCE",
-    "CONDOMINIO VARANDAS DO ALTO", "BARRA VIVA 2", "CONDOMINIO EDIFICIO PORTO DO SOL", "CONDOMINIO RESIDENCIAL BOA VISTA", "CONDOMINIO DO CONJUNTO RESIDENCIAL JARDIM KARINA D", "CONDOMINIO EDIFICIO DONA ISABEL",
-    "EDIFICIO OLIMPICO RESIDENCE", "CONDOMINIO DO EDIFICIO DONA ROMANA", "CONDOMINIO DO EDIFICIO CABO DA ROCA", "CONDOMINIO RESIDENCIAL QUINTAS DA PRAIA", "CONDOMINIO RESIDENCIAL PADRE JOAO RIBEIRO", "CONDOMINIO DO EDIFICIO CHACARA DO RIO",
-    "CONDOMINIO ATUA MOOCA II", "CONDOMINIO DO EDIFICIO VERDANO", "CONDMINIO DO EDIFICIO SANTOS DUMONT", "CONDOMINIO DO EDIFICIO SAO BERNARDO", "CONDOMINIO DO EDIFICIO TORE", "CONDOMINIO BREEZE FCK RESIDENCE",
-    "PROJETO IMOBILIARIO A 20", "CONDOMINIO DO EDIFICIO ANA CAROLINA", "CONDOMINIO DO EDIFICIO CASTELLO SAINT ANGELO", "CONDOMINIO DO EDIFICIO AMBROSIO TRAJANO", "CONDOMINIO DO EDIFICIO MARIA INES", "CONDOMINIO DO EDIFICIO MIRAMAR",
-    "CONDOMINIO DO EDIFICIO ANTIBES", "CONDOMINIO DO EDIFICIO SANTANA", "EDIFICIO TERRAZZA BEIRA RIO", "EDIFICIO PORTO IBIZA", "EDIFICIO ACQUA BEACH RESIDENCE", "PROJETO IMOBILIARIO E 88",
-    "ROOFTOP AGAMENON PRINCE", "EDIFICIO TOLIVE ONE", "CONDOMINIO DO EDIFICIO 14 BIS", "CARNEIROS ATLANTICO FLATS & RESORT", "EDIFICIO BEIRAMAR PRINCE BEACH HOME", "COMDOMINIO WAIKIKI GARDEN",
-    "EDIFICIO TERRAZZA APIPUCOS", "Cond. Ed. S?o Geraldo", "VIBRA BIOS VELEIROS", "Cond. Friends Residencial", "CONDOMINIO TOUR DE SAINT LAURENT", "CONDOMINIO DO EDIFICIO JAQUEIRA PARK",
-    "PATIO CENTRAL - CORES SP CAMBUCI", "CONJUNTO HABITACIONAL PIRITUBA A", "MAR DE CAMPAS RESIDENCE", "CONDOMINIO EDIFICIO CANCALE", "CONDOMINIO RESIDENCIAL TOM JOBIM", "MAXIMO RECREIO CONDOMINIO RESORT",
-    "BLUMEN RESIDENCE", "RESIDENCIAL PIAZZA PLATINA", "CONDOMINIO RG PERSONAL RESIDENCES", "CONDOMINIO SAN MARCO", "CONDOMINIO SAN RAFAEL", "RESIDENCIAL MONACO I", "CONDOMINIO RESIDENCIAL VILLAGGIO VERONA",
-    "CONDOMINIO RESIDENCIAL PARQUE CENTRAL", "CONDOMINIO RESIDENCIAL FOR LIFE COLINAS CLUBE", "CONDOMINIO DO EDIFICIO REIS MAGOS", "RESIDENCIAL RAVENA", "TERRAZZA BEACH RESIDENCE", "CONDOMINIO HORIZONTAL RESIDENCIAL JARDINS DE TIVOLI",
-    "CONDOMINIO DO EDIFICIO START COSTA DOURADA RESIDENCE", "CONDOMINIO DO EDIFICIO TSAR", "Cond. Ed. Perugia - Tijuca", "CONDOMINIO DO EDIFICIO PAULO ALBUQUERQUE", "CONDOMINIO DO EDIFICIO MARIA ODILE", "ATLANTIC LIFE RESIDENCE",
-    "TEG SACOMA", "PARATI", "CONDOMINIO DO EDIFICIO SALVADOR DE SA", "ENG. HEITOR BARBOSA MOREIRA", "COND ED REMBRANDT VAN RIJN", "EDIFÍCIO BRISA DO MAR", "CONDOMINIO TRAFALGAR", "COND. EDIFÍCIO SORAYA", "CONDOMINIO CIDADE JARDIM",
-    "ED. TIO EDUARDINHO", "ED. PRAIA DE GUARAPARI", "RESIDENCIAL PRAIA DA GÁVEA", "CONDOMINIO EDIFICIO GOLDEN PLACE", "EDIFICIO REDENTOR", "CONDOMINIO DO EDIFICIO IBITINGA", "COND EDIFICIO A RUA ZACO PARANA 94",
-    "COND EDIFICIOS GREEN BAY E GREEN STAR", "CONDOMINIO DO EDIFICIO SOLAR DAS ACACIAS", "CONDOMINIO DO EDIFICIO AGUAS LINDAS", "CONDOMINIO DO EDIFICIO YORK", "CONDOMINIO BRANCUSI", "CONDOMINIO EDIFICIO JUDITH",
-    "CONDOMINIO TORREMOLINOS", "CONDOMINIO ARCADIA MALL", "CONJUNTO RESIDENCIAL LYDIA DOLIVEIRA", "CONDOMINIO DO EDIFICIO GENERAL IVAN RAPOSO", "CONDOMINIO FLORESTA", "CONDOMINIO ARVOREDO",
-    "COND EDIFÍCIO PARADISO RESIDENCE SERVICE", "CONDOMINIO DO EDIFICIO ESSER", "MEU LAR CANTAREIRA", "CONDOMINIO CLUBE E VIDA VILA MATILDE", "CONDOMINIO EDIFICIO SOLAR BEIJA FLOR", "COND RESID PLANO & PQ DO CARMO-IOSOSUKE II",
-    "PLANO & PIRITUBA - SERRA DA VELHA", "PLANO & RESERVA DO CARMO", "CONDOMINIO DO EDIFICIO LIVERPOOL", "PLANO&VILA SONIA - JOAO CAIAFFA", "MORUMBI", "PLANO & CURSINO - OURIVES 1", "PLANO & CURSINO - OURIVES 2",
-    "COND EDIFICIO BARRA GARDEN SHOPPING CENTER", "DEBORA", "MARIA TEREZA", "TOUR DE MATISSE", "VILLAGE DAS MONTANHAS", "COND EDIF TENENTE ARTHUR CARLOS FERRAO", "SOLAR DOS GIRASSOIS", "SCHUBERT", "SAUSALITO",
-    "PABLO PICASSO", "MARGAUX", "IBIZA", "GALAXIA", "COTE DU SAN MARTIN", "CONDE DAS FLORES", "CONDOMINIO DO EDIFICIO ADMIRAL", "AMERICAN RESIDENCE", "NOBILIS", "SANTO ANDRE", "JOAQUIM BANDEIRA", "JARDINS",
-    "BEACH CLASS", "SAO PEDRO", "ILHA DE CORSEGA", "ALTA VISTA PIEDADE", "JOAO PAULO II", "SOLAR DAS AMENDOEIRAS", "RESERVA DOS PASSAROS", "ROMA", "LAURA BANDEIRA", "PLANO & LARGO DO CAMBUCI - ANA NERI",
-    "TOUR DE FRANCE", "LUCILLA", "PLANO & CAMPO LIMPO - SERRA RIBEIRO 3", "RESIDENCIAL VALE DO SOL", "SOLAR DOS RIOS", "VENANCIO FLORES", "CIDADE DE ALAGOINHAS", "DIAS DA CRUZ", "CONDOMINIO DO EDIFICIO DOM ANIBAL",
-    "COND EDIFICIO MIGUEL ANGEL ASTURIAS", "CONDOMINIO DO EDIFICIO TAMBAU", "ENGENHO PRINCE", "CASA FORTE", "CONDOMINIO VILLAGE DA BORBOREMA", "EMPRESARIAL UBAIAS", "CONDOMINIO DO EDIFICIO BRENNAND PLAZA", "AGAVE",
-    "CONDOMINIO DO EDIFICIO ELIANE", "FIGUEIRA", "VELEIRO", "CONDOMINIO RESIDENCIAL RECANTO DA COLINA", "CONDOMINIO RESIDENCIAL FATTO FAMILY CLUB VILA ANDRADE", "xxxTESTE RMSXXX", "CONDOMINIO RESIDENCIAL CANTO DAS ARVORES",
-    "SUZANA", "TINOCO", "PERUGGIA", "IDEAL PORTAL DE ALDEIA", "CONDOMINIO DO EDIFICIO QUATRO ESTACOES", "JARDIM DAS UBAIAS", "CONDOMINIO VEREDA TATUAPE", "CONDOMINIO VIDA VIVA FREGUESIA DO O", "CONDOMINIO RESIDENCIAL PLANO&JARDIM SUL",
-    "CONDOMINIO JUAREZ VIEIRA", "CONDOMINIO LA SPEZIA", "CONDOMINIO BOSQUE", "MORADA DO SUL", "ARRECIFES", "CONDOMINIO DO EDIFICIO ETERNITY", "EDIFICIO BARRA HOME STAY", "CONDOMINIO DO EDIFICIO TANCREDO NEVES",
-    "CONDOMINIO EDIFICIO ANTIBES", "CONDOMINIO EDIFICIO TANABI", "CONDOMINIO EDIFICIO STA IGNEZ", "CONDOMINIO EDIFICIO PANORAMA", "CONDOMINIO EUCALIPTO RESERVA SAO LOURENCO", "CONDOMINIO CEREJEIRA RESERVA SAO LOURENCO",
-    "CONDOMINIO RESIDENCIAL JARDIM IMPERIAL", "EDIFICIO WEST PARK", "ECO VILLE", "COND CONJUNTO PRIVE JARDIM DOS IPES", "CONDOMINIO DO EDIFICIO QUATRO NACOES", "RESIDENCIAL VEREADOR LEANDRO FILHO", "NORTE PREMIUM",
-    "CONDOMINIO EDIFICIO RIO PARAGUACU", "CONDOMINIO DO EDIFICIO MORADA BEIRA RIO", "CONDOMINIO DO EDIFICIO SAINT SEBASTIEN", "RESIDENCIAL HEBREA MULATO", "COND EDIF BOSQUE BOA VIAGEM HOME SERVICE", "COND DO EDIFICIO RESIDENCIAL DAS UBAIAS",
-    "CONDOMINIO LIVING PRIVILEGE", "CONDOMINIO EDIFICIO RIVERSIDE", "CONDOMINIO DO EDIFICIO ATOL DE MURUROA", "COND EDIFICIO EMPRESARIAL MANGUINHOS", "COND EDIFICIO FORTE DE SAO FRANCISCO", "CONDOMINIO EDIFICIO PORTOFINO",
-    "CONDOMINIO DO EDIFICIO CAPIBARIBE", "CONDOMINIO DO EDIFICIO GRAN PARC PREMIUM", "CONDOMINIO DO EDIFICIO SANTA TECLA", "BOULEVARD VILA MARIA", "CONDOMINIO DO EDIFICIO KING DAVID", "CONDOMINIO DO EDIFICIO VERSATTI RESIDENCE",
-    "CONDOMINIO EDIFICIO NEAR PARQUE SANTANA", "CONDOMINIO EDIFICIO CONJUNTO SUMARE", "CONDOMINIO RESIDENCIAL PLANO & FLORADA IPE", "CONDOMINIO ITAOCA RESIDENCE", "CONDOMINIO DO EDIFICIO EVORA", "CONDOMINIO DO EDIFICIO ALBINO VILACA",
-    "CONDOMINIO DO EDIFICIO MARIA GLAUCIA", "CONDOMINIO EDIFICIO FLAMBOYANT", "BUSINESS CENTER", "RESIDENCIAL HORIZONTE", "CONDOMINIO DO EDIFICIO PONTEVEDRA", "RESIDENCIAL COMPLETO PIEDADE", "CONDOMINIO TESTE LOWNDES",
-    "CONDOMINIO DO EDIFICIO CANOPUS", "CONDOMINIO DO EDIFICIO PRADO", "COND EDIFICIO BEACH CLASS EXECUTIVE", "COND JARDINS DO JANGA CONDOMINIO CLUBE", "CONDOMINIO DO EDIFICIO ALEIXO", "CONDOMINIO DO EDIFICIO JERICO",
-    "CONDOMINIO DO EDIFICIO MARIA LUIZA", "CONDOMINIO DO EDIFICIO ANQUISES", "CONDOMINIO DO EDIFICIO MILAZZO RESIDENCE", "MOOV BELEM", "CONDOMINIO RESIDENCIAL TOM PENHA", "ALAMEDA DO FRIO CONDOMINIO CLUBE",
-    "CONDOMINIO DO EDIFICIO TORRE DE LYON", "CONDOMINIO RESIDENCIAL CONQUISTA I", "SCENA TATUAPE", "CONDOMINIO EDIFICIO MATER ET MAGISTRI", "CONDOMINIO RESIDENCIAL SOLAR VALQUEIRE", "TREE MORUMBI", "MOOV PARQUE MAIA",
-    "CONDOMINIO RESIDENCIAL MOMENT ANALIA FRANCO", "CONJUNTO RESIDENCIAL SAN SEBASTIAN", "COND EDIFICIO BEACH CLASS SANTA MARIA", "CONDOMINIO ESPACO SAO PAULO", "CONDOMINIO MEET BOTAFOGO", "CONDOMINIO DO EDIFICIO IDA REGINA",
-    "POUSADA DEL REY", "COND EDIFICIO RESIDENCE PORT GREVILLE", "CONDOMINIO DO EDIFICIO RESIDENCIAL NIAS", "CONDOMINIO DO EDIFICIO AREZZO", "COND RESIDENCIAL DO EDIFICIO HADIMARCK", "CONDOMINIO DO EDIFICIO JARDIM DAS ACACIAS",
-    "CUSTODIA", "CONDOMINIO DO EDIFICIO CASTELO DE VAN GOGH", "CONDOMINIO PRIVE HARAS DE ALDEIA I", "MARINAS DA BARRA", "CONDOMINIO DO EDIFICIO PIAZZA NAVONA", "CONDOMINIO EDIFICIO ACARAU", "CONDOMINIO DO EDIFICIO VIAREGGIO",
-    "CONDOMINIO MORADAS DO ITANHANGA BLOCO 4", "CONDOMINIO RESIDENCIAL PLANO & ESTACAO PIQUERI I", "CONDOMINIO DO EDIFICIO VARANDAS DO RECREIO", "CONDOMINIO MAIS ALTOS MORUMBI", "CONDOMINIO DO EDIFICIO LA MAISON",
-    "CONDOMINIO DO EDIFICIO ANGEL", "CONDOMINIO DO EDIFICIO MARIA HELENA", "CONDOMINIO DO EDIFICIO SAINT GUILHERME", "RESIDENCIAL LIBERDADE", "CONDOMINIO DO EDIFICIO SILVA GRACA", "CONDOMINIO EDIFICIO OSWALDO BRATKE",
-    "CONDOMINIO EDIFICIO PALMARES", "RESIDENCIAL PERGAMO", "VERONA (JARDIM BELEM)", "CONDOMINIO DO EDIFICIO FRANS POST", "CONDOMINIO TESTE SEMOG", "CONDOMINIO DO EDIFICIO ILHA DE MILLOS", "CONDOMINIO NOSSA SENHORA DE GUADALUPE",
-    "CONDOMINIO DO EDIFICIO ESTACAO MARIM", "CONDOMINIO GREEN VILLAGE RESIDENCE", "CONDOMINIO DO EDIFICIO JOSE BANDEIRA DE OLIVEIRA", "MARCONI BRUNET", "CONDOMINIO DO EMPREENDIMENTO VILLAGIO PRACAS RESIDENCIAS",
-    "ENGENHO CAMARAS CONDOMINIO PRESERVAR", "CONDOMINIO JACARANDA RESERVA SAO LOURENCO", "CONDOMINIO RESIDENCIAL VILA VERDE", "LOLA", "CONDOMINIO DO EDIFICIO VILLA DAS GRACAS", "CONDOMINIO DO EDIFICIO JARDINS DO ROSARINHO",
-    "CONDOMINIO EDIFICIO RESIDENCIAS DA MADALENA", "CONDOMINIO VIVA PARAISO", "SOL DE CAMARAS CONDOMINIO I", "CONDOMINIO PRIVE VALE DAS RUSSAS", "CONDOMINIO EDIFICIO MORADA DA MADALENA", "CONDOMINIO DO EDIFICIO DIMONA",
-    "CONDOMINIO DO EDIFICIO REMBRANDT", "CONDOMINIO EDIFICIO LAON", "RESERVA SITIO DAS ARVORES ALAMEDA SAPUCAIA", "CONDOMINIO RESIDENCIAL CASAS VOGUE", "CONDOMINIO EDIFICIO EMPRESARIAL CASA FORTE", "CONDOMINIO RESIDENCIAL AMALIA GURGEL",
-    "CONDOMINIO PRIVE SOLAR MONT BLANC", "CONDOMINIO EDIFICIO ILHA DE DELLOS", "ANCORADOURO", "JARDIM PARADISO V", "CONDOMINIO DO PREDIO LIFE RESIDENCE", "CONDOMINIO EDIFICIO MARIA CECILIA DA CUNHA BUENO",
-    "CONDOMINIO DO EDIFICIO FLANGES", "CONDOMINIO VILLAGIO DO CAMPO IV", "CONDOMINIO DO EDIFICIO MONTE DAS OLIVEIRA", "CONDOMINIO DO EDIFICIO PIEDADE PRINCE", "BAGE", "CONDOMNIO DO EDIFIIO AMADOR FRANCO", "EDIFICIO VILA BRAGANCA",
-    "Condomínio Privê Haras de Aldeia II", "CONDOMINIO JARDIM IMPERIAL", "CONDOMINIO DO EDIFICIO DOM JOAO I MESTRE DE AVIZ", "CONDOMINIO VIBRA VILA MASCOTE", "CONDOMINIO EDIFICIO MEXICO", "CONDOMINIO EDIFICIO NOTHMANN",
-    "CONDOMINIO DO EDIFICIO WALFREDO FERREIRA LIMA", "PORTAL RECANTO DO BOSQUE", "CONDOMINIO DO EDIFICIO IRMA", "CONDOMINIO DO EDIFICIO EMPRESARIAL 1002", "CONDOMINIO DO EDIFICIO BOLIVAR", "EDIFICIO FERNANDO TEIXEIRA BASTO",
-    "CONDOMINIO RESIDENCIAL GOLDEN LIFE", "CONDOMINIO VERANO", "NORTH COAST", "CONDOMINIO DO EDIFICIO AMSTERDAM", "CONDOMINIO DO EDIFICIO ANA PAULA", "RESIDENCIAL SEVERINO RAMOS PIMENTEL", "CONDOMINIO DO EDIFICIO SAYONARA",
-    "CONDOMINIO DO EDIFICIO NOSSA SENHORA DO AMPARO", "MANIHI MURO ALTO BEACHCOMBER", "CONDOMINIO DO EDIFICIO SOLAR DAS PALMEIRAS", "CONDOMINIO EDIFICIO APOLO", "CONDOMINIO RESIDENCIAL MERITO TIQUATIRA", "CONDOMINIO TESTE COBRANCA",
-    "CONDOMINIO DO EDIFICIO SPAZIO DEL MARE 1", "EDIFICIO BANDEIRANTES", "CONDOMINIO DO EDIFICIO ADHARA", "EMPREENDIMENTO AURORA NOBRE", "CONDOMINIO DO EDIFICIO DAS OLIVEIRAS", "MONTE SINAI", "CONDOMINIO PLANO & PANAMBY",
-    "VIBRA ESTACAO CAPAO REDONDO"
-  ];
+    const dropZone = document.getElementById('dropZone');
+    const inputFiles = document.getElementById('pdfFiles');
+    const textareaResultado = document.getElementById('resultado');
+    const btnCopiar = document.getElementById('btnCopiar');
+    const statusDiv = document.getElementById('status');
 
-  const dropZone = document.getElementById('dropZone');
-  const fileInput = document.getElementById('fileInput');
+    const mesesD4Sign = {
+        'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
+        'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
+    };
 
-  dropZone.addEventListener('click', () => fileInput.click());
+    // Eventos de Drag & Drop
+    dropZone.addEventListener('click', () => inputFiles.click());
 
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-  });
-
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-
-  dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    
-    if (e.dataTransfer.files.length > 0) {
-      const arquivos = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf');
-      processarArquivos(arquivos);
-    }
-  });
-
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) {
-      const arquivos = Array.from(e.target.files).filter(f => f.type === 'application/pdf');
-      processarArquivos(arquivos);
-    }
-  });
-
-  function lerArquivoParaBuffer(file) {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = function() { resolve(new Uint8Array(this.result)); };
-      reader.readAsArrayBuffer(file);
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
     });
-  }
 
-  async function processarArquivos(files) {
-    if (files.length === 0) return;
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
 
-    document.getElementById('output').style.display = 'block';
-    document.getElementById('statusText').innerText = `Lendo ${files.length} boleto(s)...`;
-    document.getElementById('statusText').style.color = "#d32f2f";
-    document.getElementById('previewText').innerHTML = "";
-    document.getElementById('textoBrutoExcel').value = "";
-    document.getElementById('copyBtn').disabled = true;
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) {
+            const arquivosPDF = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf');
+            processarLote(arquivosPDF);
+        }
+    });
 
-    let linhasPerfeitas = [];
-    let linhasComFalha = [];
-    let htmlPreview = "";
+    inputFiles.addEventListener('change', function(event) {
+        if (event.target.files.length > 0) {
+            processarLote(event.target.files);
+        }
+    });
 
-    for (let f = 0; f < files.length; f++) {
-      const file = files[f];
-      
-      try {
-        const typedarray = await lerArquivoParaBuffer(file);
-        const pdf = await pdfjsLib.getDocument(typedarray).promise;
-        let textoCompleto = "";
+    // Função centralizada para processar os arquivos automaticamente
+    async function processarLote(arquivos) {
+        textareaResultado.value = "";
+        btnCopiar.disabled = true;
+        statusDiv.className = "processing";
+        
+        let todasAsLinhasExcel = [];
+        let arquivosProcessados = 0;
 
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const pagina = await pdf.getPage(i);
-          const conteudoTexto = await pagina.getTextContent();
-          const textoDaPagina = conteudoTexto.items.map(item => item.str).join(" ");
-          textoCompleto += textoDaPagina + "\n";
+        for (let i = 0; i < arquivos.length; i++) {
+            const arquivo = arquivos[i];
+            statusDiv.textContent = `Processando arquivo ${i + 1} de ${arquivos.length}: ${arquivo.name}...`;
+            
+            try {
+                const textoLimpo = await extrairTextoDoPDF(arquivo);
+                const linhaGerada = aplicarRegrasDeNegocio(textoLimpo, arquivo.name);
+                todasAsLinhasExcel.push(linhaGerada);
+            } catch (erro) {
+                console.error(`Erro no arquivo ${arquivo.name}:`, erro);
+                todasAsLinhasExcel.push(`ERRO DE LEITURA\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t${arquivo.name}`);
+            }
+            arquivosProcessados++;
         }
 
-        const textoUpper = textoCompleto.toUpperCase();
-        const nomeUpper = file.name.toUpperCase();
+        textareaResultado.value = todasAsLinhasExcel.join("\n");
         
-        if (textoUpper.includes("BORDERO COBRANCA") || nomeUpper.includes("BORDERO") || nomeUpper.includes("BORDERÔ")) {
-          htmlPreview += `<strong style="color:#d9534f;">${f+1}. [BORDERÔ DETECTADO] Arquivo: ${file.name} - Excluído para análise manual.</strong><br><hr>`;
-          continue; 
+        statusDiv.className = "success";
+        statusDiv.textContent = `✅ ${arquivosProcessados} documento(s) processado(s) com sucesso!`;
+        btnCopiar.disabled = false;
+        inputFiles.value = "";
+    }
+
+    async function extrairTextoDoPDF(file) {
+        return new Promise((resolve, reject) => {
+            const fileReader = new FileReader();
+            fileReader.onload = async function(e) {
+                try {
+                    const typedArray = new Uint8Array(e.target.result);
+                    const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                    let textoCompleto = "";
+
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const pagina = await pdf.getPage(i);
+                        const conteudo = await pagina.getTextContent();
+                        const textoPagina = conteudo.items.map(item => item.str).join(' ');
+                        textoCompleto += textoPagina + " ";
+                    }
+
+                    let textoNormalizado = textoCompleto.replace(/\s+/g, ' ').trim();
+                    resolve(textoNormalizado);
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        });
+    }
+
+    function aplicarRegrasDeNegocio(texto, nomeArquivo) {
+        const dados = { B: "", C: "", D: "", E: "", F: "", G: "", H: "", T: "" };
+
+        // REGRA 1 - Condomínio (Coluna B)
+        dados.B = nomeArquivo.replace(/\.pdf$/i, '').trim();
+
+        // REGRA 2 - Unidade e Bloco (Coluna C)
+        const regexUnidade = /da unidade\s+(.*?)\s*(?:do\b|da\b|,)/i;
+        const matchUnidade = texto.match(regexUnidade);
+        if (matchUnidade) dados.C = matchUnidade[1].trim();
+
+        // REGRA 3 - Nome do Titular (Coluna D)
+        const regexTitular = /DEVEDOR:\s*([^,]+)/i;
+        const matchTitular = texto.match(regexTitular);
+        if (matchTitular) dados.D = matchTitular[1].trim();
+
+        // REGRA E - E-mail do Devedor (Coluna E) - Cláusula 3
+        const regexEmail = /endereço de e-mail:\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i;
+        const matchEmail = texto.match(regexEmail);
+        if (matchEmail) dados.E = matchEmail[1].trim();
+
+        // REGRA 4 - Número de Parcelas (Coluna F)
+        const regexParcelas = /pago em\s+(\d+)\s*\(/i;
+        const matchParcelas = texto.match(regexParcelas);
+        if (matchParcelas) dados.F = matchParcelas[1].trim();
+
+        // REGRA 5 - Data de Vencimento (Coluna G)
+        const regexVencimento = /vencendo-se a primeira em\s+(\d{2})\/\d{2}\/\d{4}/i;
+        const matchVencimento = texto.match(regexVencimento);
+        if (matchVencimento) dados.G = `Todo dia ${matchVencimento[1]}`;
+
+        // REGRA 6 - Data de Emissão (Coluna H)
+        const indexEventos = texto.toLowerCase().indexOf("eventos do documento");
+        if (indexEventos !== -1) {
+            const textoEventos = texto.substring(indexEventos);
+            const regexDatasD4 = /(\d{2})\s+([a-zA-Z]{3})\s+(\d{4})/g;
+            let datasEncontradas = [...textoEventos.matchAll(regexDatasD4)];
+            
+            if (datasEncontradas.length > 0) {
+                let alvo = datasEncontradas.length >= 3 ? datasEncontradas[2] : datasEncontradas[datasEncontradas.length - 1];
+                let dia = alvo[1];
+                let mesStr = alvo[2].toLowerCase();
+                let ano = alvo[3];
+                let mesNum = mesesD4Sign[mesStr] || '01'; 
+                
+                dados.H = `${dia}/${mesNum}/${ano}`;
+            }
         }
-        
-        const dados = extrairDados(textoCompleto, file.name);
 
-        const colunasExcel = new Array(20).fill(""); 
-        colunasExcel[1] = dados.condominio;     // Col B
-        colunasExcel[2] = dados.unidadeBloco;   // Col C
-        colunasExcel[3] = dados.titular;        // Col D
-        colunasExcel[5] = dados.totalParcelas;  // Col F
-        colunasExcel[6] = dados.dataVencimento; // Col G
-        colunasExcel[7] = dados.dataEmissao;    // Col H
-        colunasExcel[19] = dados.valor;         // Col T
-
-        const linhaFormatada = colunasExcel.join("\t");
-
-        if (dados.temFalha) {
-          linhasComFalha.push(linhaFormatada);
-          htmlPreview += `<strong style="color:#e67e22;">${f+1}. [ATENÇÃO - FALHA/N/A] Arquivo: ${file.name} (Movido para o fim)</strong><br><hr>`;
-        } else {
-          linhasPerfeitas.push(linhaFormatada);
-          htmlPreview += `<strong>${f+1}.</strong> ${dados.condominio} | ${dados.unidadeBloco} | ${dados.titular} | Parc: ${dados.totalParcelas} | R$ ${dados.valor}<br><hr style="border:0; border-top: 1px solid #ddd;">`;
+        // REGRA 7 - Valor do Acordo + R$ 5,50 (Coluna T)
+        const regexValor = /exigível de\s*R\$\s*([\d\.\s]+,\s*\d{2})/i;
+        const matchValor = texto.match(regexValor);
+        if (matchValor) {
+            let valorCru = matchValor[1].replace(/[\.\s]/g, '').replace(',', '.');
+            let valorFloat = parseFloat(valorCru);
+            
+            if (!isNaN(valorFloat)) {
+                let valorComAcrescimo = valorFloat + 5.50;
+                dados.T = valorComAcrescimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
         }
+
+        // Montagem da linha (Índices: A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7... T=19)
+        const colunas = new Array(20).fill("");
+        colunas[1] = dados.B;  
+        colunas[2] = dados.C;  
+        colunas[3] = dados.D;  
+        colunas[4] = dados.E;  
+        colunas[5] = dados.F;  
+        colunas[6] = dados.G;  
+        colunas[7] = dados.H;  
+        colunas[19] = dados.T; 
+
+        return colunas.join("\t");
+    }
+
+    function copiarParaExcel() {
+        if (!textareaResultado.value) return;
         
-      } catch (error) {
-        htmlPreview += `<strong style="color:red;">${f+1}. Erro ao ler: ${file.name}</strong><br><hr>`;
-      }
+        textareaResultado.select();
+        textareaResultado.setSelectionRange(0, 99999);
+        
+        navigator.clipboard.writeText(textareaResultado.value).then(() => {
+            statusDiv.textContent = "Copiado com sucesso! Agora vá no Excel, clique na célula A (da linha vazia) e pressione Ctrl+V.";
+            statusDiv.className = "success";
+        }).catch(err => {
+            document.execCommand('copy');
+            statusDiv.textContent = "Copiado usando método alternativo! Cole no Excel.";
+        });
     }
-
-    const todasAsLinhas = linhasPerfeitas.concat(linhasComFalha);
-    document.getElementById('textoBrutoExcel').value = todasAsLinhas.join("\n");
-
-    document.getElementById('previewText').innerHTML = htmlPreview;
-    document.getElementById('statusText').innerText = "Concluído!";
-    document.getElementById('statusText').style.color = "#28a745";
-    const btn = document.getElementById('copyBtn');
-    btn.disabled = false;
-    btn.innerText = `Copiar Linhas para o Excel`;
-  }
-
-  function extrairDados(texto, nomeArquivo) {
-    const txt = texto.replace(/\s+/g, ' ');
-
-    let condominio = "N/A", unidadeBloco = "N/A", titular = "N/A", totalParcelas = "1";
-    let dataVencimento = "N/A", dataEmissao = "N/A", valor = "N/A";
-    let temFalha = false;
-
-    // 1. BUSCA DE CONDOMÍNIO CRUZANDO COM A LISTA OFICIAL
-    for (let i = 0; i < listaOficialCondominios.length; i++) {
-      let condOficial = listaOficialCondominios[i];
-      if (txt.toUpperCase().includes(condOficial)) {
-        condominio = condOficial;
-        break;
-      }
-    }
-
-    // 2. BUSCA DE UNIDADE / BLOCO / AP / LOJA
-    const regexUnidade = /((?:AP\.|AP|BLBL|Unidade|Bloco|Apto|Casa|Lote|Loja|Sala|Sl\.|Galpao|Galpão)\s*[\w\d\-]+(?:\s*(?:AP\.|AP|BL|Bloco)\s*[\w\d]+)?|\b\d{3,4}\s*[-–]\s*BL\s*[\w\d]+)\b/i;
-    const matchUnd = txt.match(regexUnidade);
-    if (matchUnd) {
-      let valUnd = matchUnd[0].trim();
-      if (!valUnd.toUpperCase().includes("UNIDADE M")) {
-        unidadeBloco = valUnd;
-      }
-    }
-
-    // 3. TITULAR / PAGADOR
-    const regexTitular = /(?:Sacador\/Avalista|Sacado|Pagador|Nome do Pagador)[:\s]*([A-Za-zÀ-ÿ\s]+?)(?:CPF|CNPJ|-|Endereço|Vencimento|Data|INADIMPLÊNCIA)/i;
-    const matchTitular = txt.match(regexTitular);
-    if (matchTitular) {
-      titular = matchTitular[1].trim();
-    }
-
-    // 4. PARCELAS
-    const regexFallback = /\b\d{1,3}\/(\d{1,3})\b/g;
-    let pMatch;
-    while ((pMatch = regexFallback.exec(txt)) !== null) {
-      let numParc = parseInt(pMatch[1]);
-      if (numParc < 1000) { 
-        totalParcelas = pMatch[1];
-        break;
-      }
-    }
-
-    // 5. DATAS E VALOR
-    const regexVencimento = /(?:Vencimento|Data de Vencimento|Vencimento[:\s]*)\s*(\d{2}\/\d{2}\/\d{4})/i;
-    const matchVencimento = txt.match(regexVencimento);
-    if (matchVencimento) dataVencimento = matchVencimento[1];
-
-    const regexEmissao = /(?:Data de[ ]?Emissão|Data do Documento|Processamento|Emissão|Data Processamento)[:\s]*(\d{2}\/\d{2}\/\d{4})/i;
-    const matchEmissao = txt.match(regexEmissao);
-    if (matchEmissao) dataEmissao = matchEmissao[1];
-
-    const regexValor = /(?:Valor do Documento|Valor Cobrado|Valor|Documento)[:\s]*(?:R\$)?\s*([\d\.,]+)/i;
-    const matchValor = txt.match(regexValor);
-    if (matchValor) valor = matchValor[1];
-
-    if (condominio === "N/A") { condominio = nomeArquivo; temFalha = true; }
-    if (unidadeBloco === "N/A") { unidadeBloco = nomeArquivo; temFalha = true; }
-    if (titular === "N/A") { titular = nomeArquivo; temFalha = true; }
-
-    return { condominio, unidadeBloco, titular, totalParcelas, dataVencimento, dataEmissao, valor, temFalha };
-  }
-
-  document.getElementById('copyBtn').addEventListener('click', function() {
-    const textarea = document.getElementById('textoBrutoExcel');
-    textarea.select();
-    textarea.setSelectionRange(0, 99999);
-    try {
-      document.execCommand('copy');
-      const btn = document.getElementById('copyBtn');
-      btn.innerText = "✓ Copiado! Cole na Coluna A do Excel.";
-      btn.style.background = "#0056b3";
-      setTimeout(() => {
-        btn.innerText = "Copiar Linhas para o Excel";
-        btn.style.background = "#28a745";
-      }, 4000);
-    } catch (err) {
-      alert("Cópia bloqueada. Copie manualmente da caixa de texto.");
-    }
-  });
 </script>
+
 </body>
 </html>
