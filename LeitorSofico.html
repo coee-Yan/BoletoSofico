@@ -2,71 +2,141 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Leitor de Boletos - Sofico</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
-  body { font-family: sans-serif; padding: 20px; max-width: 850px; margin: 0 auto; background-color: #f4f7f6; }
-  .box { border: 2px dashed #007bff; padding: 30px; text-align: center; margin-bottom: 20px; background: #fff; border-radius: 8px; }
-  .result { background: #e9ecef; padding: 15px; border-radius: 5px; margin-bottom: 10px; font-family: monospace; font-size: 13px; max-height: 220px; overflow-y: auto; line-height: 1.5; }
-  textarea { width: 100%; height: 140px; margin-bottom: 15px; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; white-space: pre; overflow-x: scroll;}
-  button { background: #28a745; color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 5px; font-size: 16px; width: 100%; font-weight: bold;}
-  button:hover { background: #218838; }
-  button:disabled { background: #6c757d; cursor: not-allowed; }
-  input[type="file"] { display: none; }
-  label { cursor: pointer; color: #007bff; text-decoration: underline; font-size: 18px; font-weight: bold; }
-  .dica { font-size: 13px; color: #666; margin-top: 10px; }
-  .status { font-weight: bold; color: #d32f2f; margin-bottom: 10px; }
-  .footer-version { text-align: center; font-size: 11px; color: #888; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px; }
+  * { box-sizing: border-box; }
   
-  /* ESTILOS DO BOTÃO VOLTAR */
+  body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    margin: 0; 
+    background-color: #f4f7f6; 
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .main-container {
+    flex: 1;
+    width: 100%;
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  h2 { color: #333; text-align: center; margin-bottom: 30px; }
+
+  /* Estilo do Botão Voltar Fixo */
   .btn-voltar {
     position: fixed;
-    bottom: 80px; /* Mais alto, acima do rodapé */
+    top: 20px;
     left: 20px;
     background-color: #6c757d;
     color: white;
-    padding: 10px 15px;
+    padding: 10px 20px;
     border-radius: 5px;
     text-decoration: none;
     font-weight: bold;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    transition: background-color 0.3s ease;
+    font-size: 14px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    transition: background 0.3s;
     z-index: 1000;
   }
-  .btn-voltar:hover {
-    background-color: #5a6268;
+  .btn-voltar:hover { background-color: #5a6268; }
+
+  /* Área de Arrastar e Soltar */
+  .drop-zone { 
+    border: 2px dashed #007bff; 
+    padding: 40px 20px; 
+    text-align: center; 
+    margin-bottom: 20px; 
+    background: #fff; 
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .drop-zone.dragover {
+    background-color: #e9ecef;
+    border-color: #0056b3;
+    transform: scale(1.02);
+  }
+  .drop-zone span { font-size: 18px; font-weight: bold; color: #007bff; display: block; margin-bottom: 10px; }
+  .drop-zone .dica { font-size: 13px; color: #666; }
+  .drop-zone input[type="file"] { display: none; }
+
+  /* Botão de Copiar */
+  .btn-copiar {
+    background: #28a745; 
+    color: white; 
+    border: none; 
+    padding: 15px 20px; 
+    cursor: pointer; 
+    border-radius: 5px; 
+    font-size: 16px; 
+    width: 100%; 
+    font-weight: bold;
+    transition: background 0.3s;
+    margin-top: 10px;
+  }
+  .btn-copiar:hover { background: #218838; }
+  .btn-copiar:disabled { background: #6c757d; cursor: not-allowed; }
+
+  /* Área de Resultados */
+  #output { display: none; margin-bottom: 30px; }
+  .status { font-weight: bold; color: #d32f2f; margin-bottom: 15px; font-size: 18px; text-align: center;}
+  .result { background: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 20px; font-family: monospace; font-size: 13px; max-height: 250px; overflow-y: auto; line-height: 1.6; }
+  textarea { width: 100%; height: 160px; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; white-space: pre; overflow-x: scroll; resize: vertical;}
+  
+  /* Rodapé Exato */
+  .footer-version { 
+    text-align: center; 
+    font-size: 12px; 
+    color: #888; 
+    background-color: #e9ecef;
+    padding: 15px;
+    border-top: 1px solid #ddd; 
+    width: 100%;
   }
 </style>
 </head>
 <body>
 
-<!-- BOTÃO VOLTAR FLUTUANTE -->
 <a href="index.html" class="btn-voltar">⬅ Voltar</a>
 
-<h2>Leitor de Boletos em Lote (Sofico)</h2>
-<div class="box">
-  <input type="file" id="fileInput" accept="application/pdf" multiple>
-  <label for="fileInput">Clique aqui e selecione os Boletos PDF</label>
-  <div class="dica">Borderôs vão para análise manual e os com falhas vão para o final da lista.</div>
+<div class="main-container">
+  <h2>Leitor de Boletos - Sofico</h2>
+  
+  <!-- Área de Drag and Drop -->
+  <div class="drop-zone" id="dropZone">
+    <span id="dropZoneText">Clique para selecionar ou arraste e solte os documentos aqui</span>
+    <div class="dica">Apenas arquivos PDF. Borderôs vão para análise manual e os com falhas vão para o final da lista.</div>
+    <input type="file" id="fileInput" accept="application/pdf" multiple>
+  </div>
+
+  <div id="output">
+    <div class="status" id="statusText">Processando...</div>
+    <h3>1. Resumo Visual:</h3>
+    <div class="result" id="previewText"></div>
+    <h3>2. Dados Prontos para o Excel:</h3>
+    <textarea id="textoBrutoExcel" readonly></textarea>
+    
+    <!-- Botão de Copiar posicionado acima do rodapé -->
+    <button id="copyBtn" class="btn-copiar">Copiar Linhas para o Excel</button>
+  </div>
 </div>
 
-<div id="output" style="display:none;">
-  <div class="status" id="statusText">Processando...</div>
-  <h3>1. Resumo Visual:</h3>
-  <div class="result" id="previewText"></div>
-  <h3>2. Dados Prontos para o Excel:</h3>
-  <textarea id="textoBrutoExcel" readonly></textarea>
-  <button id="copyBtn">Copiar Linhas para o Excel</button>
-</div>
-
+<!-- Rodapé Fixo no Fim da Página -->
 <div class="footer-version">
-  Versão 2026-09-22 09:30
+  Versão 2026-09-22 10:30 - Atualização Definitiva
 </div>
 
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-  // Lista Oficial de Condomínios
+  // Lista Oficial de Condomínios original (sem remoção de duplicatas)
   const listaOficialCondominios = [
     "COND CONJUNTO PRIVE JARDIM DOS IPES", "CONDOMINIO DO EDIFICIO CASTELO DE LAURIER", "CONDOMINIO RESIDENCIAL PLANO & ESTACAO CAMPO LIMPO SERRA RIBEIRO II",
     "CONDOMINIO RESIDENCIAL PLANO & JARDIM SUL", "CONDOMINIO DO EDIFICIO VILA HILDA", "CONDOMINIO DO EMPREENDIMENTO HABITACIONAL CIDADES DO MUNDO III",
@@ -169,6 +239,36 @@
     "VIBRA ESTACAO CAPAO REDONDO"
   ];
 
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+
+  // Lógica Drag and Drop com disparo automático
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    
+    if (e.dataTransfer.files.length > 0) {
+      const arquivos = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf');
+      processarArquivos(arquivos);
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      const arquivos = Array.from(e.target.files).filter(f => f.type === 'application/pdf');
+      processarArquivos(arquivos);
+    }
+  });
+
   function lerArquivoParaBuffer(file) {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -177,12 +277,13 @@
     });
   }
 
-  document.getElementById('fileInput').addEventListener('change', async function(e) {
-    const files = e.target.files;
+  // Função disparada automaticamente ao soltar ou selecionar os arquivos
+  async function processarArquivos(files) {
     if (files.length === 0) return;
 
     document.getElementById('output').style.display = 'block';
-    document.getElementById('statusText').innerText = `Lendo ${files.length} boleto(s)...`;
+    document.getElementById('statusText').innerText = `Lendo e extraindo dados de ${files.length} boleto(s)...`;
+    document.getElementById('statusText').style.color = "#d32f2f";
     document.getElementById('previewText').innerHTML = "";
     document.getElementById('textoBrutoExcel').value = "";
     document.getElementById('copyBtn').disabled = true;
@@ -206,12 +307,11 @@
           textoCompleto += textoDaPagina + "\n";
         }
 
-        // VERIFICA SE É BORDERÔ DE COBRANÇA
         const textoUpper = textoCompleto.toUpperCase();
         const nomeUpper = file.name.toUpperCase();
         
         if (textoUpper.includes("BORDERO COBRANCA") || nomeUpper.includes("BORDERO") || nomeUpper.includes("BORDERÔ")) {
-          htmlPreview += `<strong style="color:#d9534f;">${f+1}. [BORDERÔ DETECTADO] Arquivo: ${file.name} - Excluído para análise manual.</strong><br><hr>`;
+          htmlPreview += `<strong style="color:#d9534f;">${f+1}. [BORDERÔ DETECTADO] Arquivo: ${file.name} - Excluído para análise manual.</strong><br><hr style="border:0; border-top: 1px solid #eee;">`;
           continue; 
         }
         
@@ -228,31 +328,30 @@
 
         const linhaFormatada = colunasExcel.join("\t");
 
-        // SE HOUVE FALHA (algum campo foi substituído pelo nome do arquivo), VAI PARA O FINAL DA LISTA
         if (dados.temFalha) {
           linhasComFalha.push(linhaFormatada);
-          htmlPreview += `<strong style="color:#e67e22;">${f+1}. [ATENÇÃO - FALHA/N/A] Arquivo: ${file.name} (Movido para o fim)</strong><br><hr>`;
+          htmlPreview += `<strong style="color:#e67e22;">${f+1}. [ATENÇÃO - FALHA/N/A] Arquivo: ${file.name} (Movido para o fim)</strong><br><hr style="border:0; border-top: 1px solid #eee;">`;
         } else {
           linhasPerfeitas.push(linhaFormatada);
-          htmlPreview += `<strong>${f+1}.</strong> ${dados.condominio} | ${dados.unidadeBloco} | ${dados.titular} | Parc: ${dados.totalParcelas} | R$ ${dados.valor}<br><hr style="border:0; border-top: 1px solid #ddd;">`;
+          htmlPreview += `<strong>${f+1}.</strong> ${dados.condominio} | ${dados.unidadeBloco} | ${dados.titular} | Parc: ${dados.totalParcelas} | R$ ${dados.valor}<br><hr style="border:0; border-top: 1px solid #eee;">`;
         }
         
       } catch (error) {
-        htmlPreview += `<strong style="color:red;">${f+1}. Erro ao ler: ${file.name}</strong><br><hr>`;
+        htmlPreview += `<strong style="color:red;">${f+1}. Erro ao ler: ${file.name} (Arquivo corrompido ou protegido)</strong><br><hr style="border:0; border-top: 1px solid #eee;">`;
       }
     }
 
-    // UNE AS PERFEITAS NO TOPO E AS COM FALHA NO FINAL
     const todasAsLinhas = linhasPerfeitas.concat(linhasComFalha);
     document.getElementById('textoBrutoExcel').value = todasAsLinhas.join("\n");
-
     document.getElementById('previewText').innerHTML = htmlPreview;
-    document.getElementById('statusText').innerText = "Concluído!";
+    
+    document.getElementById('statusText').innerText = "Extração Concluída com Sucesso!";
     document.getElementById('statusText').style.color = "#28a745";
-    const btn = document.getElementById('copyBtn');
-    btn.disabled = false;
-    btn.innerText = `Copiar Linhas para o Excel`;
-  });
+    
+    const btnCopy = document.getElementById('copyBtn');
+    btnCopy.disabled = false;
+    btnCopy.innerText = `Copiar Linhas para o Excel`;
+  }
 
   function extrairDados(texto, nomeArquivo) {
     const txt = texto.replace(/\s+/g, ' ');
@@ -261,7 +360,6 @@
     let dataVencimento = "N/A", dataEmissao = "N/A", valor = "N/A";
     let temFalha = false;
 
-    // 1. BUSCA DE CONDOMÍNIO CRUZANDO COM A LISTA OFICIAL
     for (let i = 0; i < listaOficialCondominios.length; i++) {
       let condOficial = listaOficialCondominios[i];
       if (txt.toUpperCase().includes(condOficial)) {
@@ -270,7 +368,6 @@
       }
     }
 
-    // 2. BUSCA DE UNIDADE / BLOCO / AP / LOJA
     const regexUnidade = /((?:AP\.|AP|BLBL|Unidade|Bloco|Apto|Casa|Lote|Loja|Sala|Sl\.|Galpao|Galpão)\s*[\w\d\-]+(?:\s*(?:AP\.|AP|BL|Bloco)\s*[\w\d]+)?|\b\d{3,4}\s*[-–]\s*BL\s*[\w\d]+)\b/i;
     const matchUnd = txt.match(regexUnidade);
     if (matchUnd) {
@@ -280,14 +377,12 @@
       }
     }
 
-    // 3. TITULAR / PAGADOR
     const regexTitular = /(?:Sacador\/Avalista|Sacado|Pagador|Nome do Pagador)[:\s]*([A-Za-zÀ-ÿ\s]+?)(?:CPF|CNPJ|-|Endereço|Vencimento|Data|INADIMPLÊNCIA)/i;
     const matchTitular = txt.match(regexTitular);
     if (matchTitular) {
       titular = matchTitular[1].trim();
     }
 
-    // 4. PARCELAS
     const regexFallback = /\b\d{1,3}\/(\d{1,3})\b/g;
     let pMatch;
     while ((pMatch = regexFallback.exec(txt)) !== null) {
@@ -298,7 +393,6 @@
       }
     }
 
-    // 5. DATAS E VALOR
     const regexVencimento = /(?:Vencimento|Data de Vencimento|Vencimento[:\s]*)\s*(\d{2}\/\d{2}\/\d{4})/i;
     const matchVencimento = txt.match(regexVencimento);
     if (matchVencimento) dataVencimento = matchVencimento[1];
@@ -311,7 +405,6 @@
     const matchValor = txt.match(regexValor);
     if (matchValor) valor = matchValor[1];
 
-    // TRATAMENTO DE FALHAS: SUBSTITUI POR NOME DO ARQUIVO E SINALIZA PARA MANDAR AO FIM DA LISTA
     if (condominio === "N/A") { condominio = nomeArquivo; temFalha = true; }
     if (unidadeBloco === "N/A") { unidadeBloco = nomeArquivo; temFalha = true; }
     if (titular === "N/A") { titular = nomeArquivo; temFalha = true; }
@@ -339,5 +432,3 @@
 </script>
 </body>
 </html>
-
-```
