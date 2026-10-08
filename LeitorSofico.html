@@ -47,8 +47,9 @@
   }
   .btn-voltar:hover { background-color: #5a6268; }
 
-  /* Área de Arrastar e Soltar */
+  /* Área de Arrastar e Soltar (Transformada em Label Nativo) */
   .drop-zone { 
+    display: block; /* Garante que funcione como uma caixa inteira */
     border: 2px dashed #007bff; 
     padding: 40px 20px; 
     text-align: center; 
@@ -65,7 +66,16 @@
   }
   .drop-zone span { font-size: 18px; font-weight: bold; color: #007bff; display: block; margin-bottom: 10px; }
   .drop-zone .dica { font-size: 13px; color: #666; }
-  #fileInput { display: none; } /* Input escondido fora da zona */
+  
+  /* Input completamente escondido, mas 100% funcional */
+  #fileInput { 
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+  }
 
   /* Botão de Copiar */
   .btn-copiar {
@@ -109,13 +119,12 @@
 <div class="main-container">
   <h2>Leitor de Boletos - Sofico</h2>
   
-  <!-- Área de Drag and Drop -->
-  <div class="drop-zone" id="dropZone">
+  <!-- Área de Drag and Drop (agora é um <label> apontando direto para o input) -->
+  <label class="drop-zone" id="dropZone" for="fileInput">
     <span id="dropZoneText">Clique para selecionar ou arraste e solte os documentos aqui</span>
     <div class="dica">Apenas arquivos PDF. Borderôs vão para análise manual e os com falhas vão para o final da lista.</div>
-  </div>
+  </label>
   
-  <!-- INPUT FORA DA ZONA DE CLIQUE (Isso resolve o bug) -->
   <input type="file" id="fileInput" accept="application/pdf" multiple>
 
   <div id="output">
@@ -130,7 +139,7 @@
 </div>
 
 <div class="footer-version">
-    Versão: 2026-10-08 14:41
+    Versão: 2026-10-08 14:50
 </div>
 
 <script>
