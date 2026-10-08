@@ -65,7 +65,7 @@
   }
   .drop-zone span { font-size: 18px; font-weight: bold; color: #007bff; display: block; margin-bottom: 10px; }
   .drop-zone .dica { font-size: 13px; color: #666; }
-  .drop-zone input[type="file"] { display: none; }
+  #fileInput { display: none; } /* Input escondido fora da zona */
 
   /* Botão de Copiar */
   .btn-copiar {
@@ -113,8 +113,10 @@
   <div class="drop-zone" id="dropZone">
     <span id="dropZoneText">Clique para selecionar ou arraste e solte os documentos aqui</span>
     <div class="dica">Apenas arquivos PDF. Borderôs vão para análise manual e os com falhas vão para o final da lista.</div>
-    <input type="file" id="fileInput" accept="application/pdf" multiple>
   </div>
+  
+  <!-- INPUT FORA DA ZONA DE CLIQUE (Isso resolve o bug) -->
+  <input type="file" id="fileInput" accept="application/pdf" multiple>
 
   <div id="output">
     <div class="status" id="statusText">Processando...</div>
@@ -123,16 +125,13 @@
     <h3>2. Dados Prontos para o Excel:</h3>
     <textarea id="textoBrutoExcel" readonly></textarea>
     
-    <!-- Botão de Copiar posicionado acima do rodapé -->
     <button id="copyBtn" class="btn-copiar">Copiar Linhas para o Excel</button>
   </div>
 </div>
 
 <div class="footer-version">
-    Versão: 2026-10-08 14:38
+    Versão: 2026-10-08 14:41
 </div>
 
 <script>
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-  // Lista Oficial de Condomínios original
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '
