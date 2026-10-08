@@ -47,9 +47,8 @@
   }
   .btn-voltar:hover { background-color: #5a6268; }
 
-  /* Área de Arrastar e Soltar (Transformada em Label Nativo) */
+  /* Área de Arrastar e Soltar (Refeita para evitar conflitos) */
   .drop-zone { 
-    display: block; /* Garante que funcione como uma caixa inteira */
     border: 2px dashed #007bff; 
     padding: 40px 20px; 
     text-align: center; 
@@ -67,15 +66,8 @@
   .drop-zone span { font-size: 18px; font-weight: bold; color: #007bff; display: block; margin-bottom: 10px; }
   .drop-zone .dica { font-size: 13px; color: #666; }
   
-  /* Input completamente escondido, mas 100% funcional */
-  #fileInput { 
-    width: 0.1px;
-    height: 0.1px;
-    opacity: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: -1;
-  }
+  /* Input 100% oculto e fora da zona de clique */
+  #fileInput { display: none; }
 
   /* Botão de Copiar */
   .btn-copiar {
@@ -119,13 +111,13 @@
 <div class="main-container">
   <h2>Leitor de Boletos - Sofico</h2>
   
-  <!-- Área de Drag and Drop (agora é um <label> apontando direto para o input) -->
-  <label class="drop-zone" id="dropZone" for="fileInput">
+  <!-- Estrutura de Arrastar isolada do Input -->
+  <div class="drop-zone" id="dropZone">
     <span id="dropZoneText">Clique para selecionar ou arraste e solte os documentos aqui</span>
     <div class="dica">Apenas arquivos PDF. Borderôs vão para análise manual e os com falhas vão para o final da lista.</div>
-  </label>
+  </div>
   
-  <input type="file" id="fileInput" accept="application/pdf" multiple>
+  <input type="file" id="fileInput" accept=".pdf" multiple>
 
   <div id="output">
     <div class="status" id="statusText">Processando...</div>
@@ -134,13 +126,16 @@
     <h3>2. Dados Prontos para o Excel:</h3>
     <textarea id="textoBrutoExcel" readonly></textarea>
     
-    <button id="copyBtn" class="btn-copiar">Copiar Linhas para o Excel</button>
+    <button id="copyBtn" class="btn-copiar" disabled>Copiar Linhas para o Excel</button>
   </div>
 </div>
 
 <div class="footer-version">
-    Versão: 2026-10-08 14:50
+    Versão Estável: 2026-10-08 15:30
 </div>
 
 <script>
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '
+  // ATENÇÃO: Motor do PDF.js
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+  const listaOficialCondominios
