@@ -47,7 +47,7 @@
   }
   .btn-voltar:hover { background-color: #5a6268; }
 
-  /* Área de Arrastar e Soltar (Refeita para evitar conflitos) */
+  /* Área de Arrastar e Soltar Isolada */
   .drop-zone { 
     border: 2px dashed #007bff; 
     padding: 40px 20px; 
@@ -66,7 +66,6 @@
   .drop-zone span { font-size: 18px; font-weight: bold; color: #007bff; display: block; margin-bottom: 10px; }
   .drop-zone .dica { font-size: 13px; color: #666; }
   
-  /* Input 100% oculto e fora da zona de clique */
   #fileInput { display: none; }
 
   /* Botão de Copiar */
@@ -92,7 +91,7 @@
   .result { background: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 20px; font-family: monospace; font-size: 13px; max-height: 250px; overflow-y: auto; line-height: 1.6; }
   textarea { width: 100%; height: 160px; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; white-space: pre; overflow-x: scroll; resize: vertical;}
   
-  /* Rodapé Exato */
+  /* Rodapé Fixo */
   .footer-version { 
     text-align: center; 
     font-size: 12px; 
@@ -111,10 +110,10 @@
 <div class="main-container">
   <h2>Leitor de Boletos - Sofico</h2>
   
-  <!-- Estrutura de Arrastar isolada do Input -->
+  <!-- Área de Interação -->
   <div class="drop-zone" id="dropZone">
     <span id="dropZoneText">Clique para selecionar ou arraste e solte os documentos aqui</span>
-    <div class="dica">Apenas arquivos PDF. Borderôs vão para análise manual e os com falhas vão para o final da lista.</div>
+    <div class="dica">Borderôs vão para o fim com a info na Coluna D, e falhas usam o nome do arquivo na última linha copiável.</div>
   </div>
   
   <input type="file" id="fileInput" accept=".pdf" multiple>
@@ -131,11 +130,254 @@
 </div>
 
 <div class="footer-version">
-    Versão Estável: 2026-10-08 15:30
+    Versão: 2026-10-08 16:50
 </div>
 
 <script>
-  // ATENÇÃO: Motor do PDF.js
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-  const listaOficialCondominios
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+  });
+
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+  });
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    filtrarEProcessar(e.dataTransfer.files);
+  });
+
+  fileInput.addEventListener('change', function(e) {
+    filtrarEProcessar(this.files);
+  });
+
+  function filtrarEProcessar(files) {
+    if (!files || files.length === 0) return;
+    const arquivosPdf = Array.from(files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+
+    if (arquivosPdf.length === 0) {
+      alert("Nenhum arquivo PDF válido selecionado.");
+      return;
+    }
+
+    processarArquivos(arquivosPdf);
+    fileInput.value = '';
+  }
+
+  function lerArquivoParaBuffer(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = function() { resolve(new Uint8Array(this.result)); };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  async function processarArquivos(files) {
+    document.getElementById('output').style.display = 'block';
+    document.getElementById('statusText').innerText = `Lendo e extraindo dados de ${files.length} boleto(s)...`;
+    document.getElementById('statusText').style.color = "#d32f2f";
+    document.getElementById('previewText').innerHTML = "";
+    document.getElementById('textoBrutoExcel').value = "";
+    document.getElementById('copyBtn').disabled = true;
+
+    let linhasPerfeitas = [];
+    let linhasComFalha = [];
+    let htmlPreview = "";
+
+    for (let f = 0; f < files.length; f++) {
+      const file = files[f];
+      const nomeOriginal = file.name;
+      
+      try {
+        const typedarray = await lerArquivoParaBuffer(file);
+        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+        let textoCompleto = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const pagina = await pdf.getPage(i);
+          const conteudoTexto = await pagina.getTextContent();
+          const textoDaPagina = conteudoTexto.items.map(item => item.str).join(" ");
+          textoCompleto += textoDaPagina + "\n";
+        }
+
+        const textoUpper = textoCompleto.toUpperCase();
+        const nomeUpper = nomeOriginal.toUpperCase();
+        
+        // EXCEÇÃO 1: BORDERÔ
+        if (textoUpper.includes("BORDERO COBRANCA") || nomeUpper.includes("BORDERO") || nomeUpper.includes("BORDERÔ")) {
+          const colunasBordero = new Array(20).fill("");
+          colunasBordero[1] = nomeOriginal; // Col B
+          colunasBordero[3] = "Borderô";    // Col D
+          colunasBordero[8] = "Sim";        // Col I
+          colunasBordero[17] = "SOFICO";    // Col R
+          
+          linhasComFalha.push(colunasBordero.join("\t"));
+          htmlPreview += `<strong style="color:#d9534f;">${f+1}. [BORDERÔ DETECTADO] Arquivo: ${nomeOriginal} (Movido para o fim)</strong><br><hr style="border:0; border-top: 1px solid #eee;">`;
+          continue; 
+        }
+        
+        const dados = extrairDadosPorAncoras(textoCompleto, nomeOriginal);
+
+        const colunasExcel = new Array(20).fill(""); 
+        colunasExcel[1] = dados.condominio;     // Col B
+        colunasExcel[2] = dados.unidadeBloco;   // Col C
+        colunasExcel[3] = dados.titular;        // Col D
+        colunasExcel[5] = dados.totalParcelas;  // Col F
+        colunasExcel[6] = dados.dataVencimento; // Col G
+        colunasExcel[7] = dados.dataEmissao;    // Col H
+        colunasExcel[8] = "Sim";                // Col I
+        colunasExcel[17] = "SOFICO";            // Col R
+        colunasExcel[19] = dados.valor;         // Col T
+
+        const linhaFormatada = colunasExcel.join("\t");
+
+        // EXCEÇÃO 2: FALHAS
+        if (dados.temFalha) {
+          linhasComFalha.push(linhaFormatada);
+          htmlPreview += `<strong style="color:#e67e22;">${f+1}. [ATENÇÃO - FALHA/N/A] Arquivo: ${nomeOriginal} (Movido para o fim)</strong><br><hr style="border:0; border-top: 1px solid #eee;">`;
+        } else {
+          linhasPerfeitas.push(linhaFormatada);
+          htmlPreview += `<strong>${f+1}.</strong> ${dados.condominio} | ${dados.unidadeBloco} | ${dados.titular} | Parc: ${dados.totalParcelas} | R$ ${dados.valor}<br><hr style="border:0; border-top: 1px solid #eee;">`;
+        }
+        
+      } catch (error) {
+        const colunasErro = new Array(20).fill(nomeOriginal);
+        colunasErro[8] = "Sim";
+        colunasErro[17] = "SOFICO";
+        linhasComFalha.push(colunasErro.join("\t"));
+        htmlPreview += `<strong style="color:red;">${f+1}. Erro ao ler: ${nomeOriginal} (Movido para o fim)</strong><br><hr style="border:0; border-top: 1px solid #eee;">`;
+      }
+    }
+
+    const todasAsLinhas = linhasPerfeitas.concat(linhasComFalha);
+    document.getElementById('textoBrutoExcel').value = todasAsLinhas.join("\n");
+    document.getElementById('previewText').innerHTML = htmlPreview;
+    
+    document.getElementById('statusText').innerText = "Extração Concluída com Sucesso!";
+    document.getElementById('statusText').style.color = "#28a745";
+    
+    const btnCopy = document.getElementById('copyBtn');
+    btnCopy.disabled = false;
+    btnCopy.innerText = `Copiar Linhas para o Excel`;
+  }
+
+  // NÚCLEO DE EXTRAÇÃO APRIMORADO (Âncoras e Delimitadores com Ajuste Fino para Col B e C)
+  function extrairDadosPorAncoras(texto, nomeArquivo) {
+    const txt = texto.replace(/\s+/g, ' ');
+
+    let condominio = "N/A", unidadeBloco = "N/A", titular = "N/A", totalParcelas = "À VISTA";
+    let dataVencimento = "N/A", dataEmissao = "N/A", valor = "N/A";
+    let temFalha = false;
+
+    // 1. CONDOMÍNIO (Delimitado entre INFORMATIVO e o início de códigos/unidades ou PAGAMENTO/ACORDO)
+    const regexCondo = /INFORMATIVO\s*(.*?)\s*(?:PAGAMENTO|ACORDO)/i;
+    const matchCondo = txt.match(regexCondo);
+    if (matchCondo && matchCondo[1].trim().length > 2) {
+      let brutoCondo = matchCondo[1].trim();
+      
+      // Remove códigos internos numéricos, lojas ou blocos colados (ex: 000412-8, - LOJA249, etc.) para isolar a Col B
+      brutoCondo = brutoCondo.replace(/[\s\-]+(\d{6}-\d|\d{4,}-\d|LOJA\d+|BLBL[\w\d]+).*$/, '').trim();
+      condominio = brutoCondo;
+    }
+
+    // 2. UNIDADE / BLOCO (Varredura robusta no topo e na morada para garantir preenchimento da Col C)
+    const regexCodTopo = /\b(\d{6}-\d)\b/;
+    const matchCodTopo = txt.match(regexCodTopo);
+    if (matchCodTopo) {
+      unidadeBloco = matchCodTopo[1];
+    } else {
+      const regexBlocoApto = /(?:BLBL|Bloco|Apto|AP\.?|LOJA)\s*[\w\d\-,\/]+/i;
+      const matchBlApto = txt.match(regexBlocoApto);
+      if (matchBlApto) {
+        unidadeBloco = matchBlApto[0].trim();
+      } else {
+        // Tenta capturar sufixos traçados no final do nome do condomínio (ex: - LOJA249 ou -000412-B)
+        const matchSufixo = txt.match(/INFORMATIVO\s*.*?(?:PAGAMENTO|ACORDO)/i);
+        if (matchSufixo) {
+          let trechoBruto = matchSufixo[0];
+          let matchTraco = trechoBruto.match(/[\-\s]+(LOJA\d+|[\w\d]+-[A-Z]|\d{6}-\d)/i);
+          if (matchTraco) {
+            unidadeBloco = matchTraco[1].trim();
+          }
+        }
+      }
+    }
+
+    // 3. TITULAR (Delimitado entre "Pagador" e o marcador de CPF/Endereço, aceitando símbolos atípicos)
+    const regexTitular = /(?:Sacador\/Avalista|Sacado|Pagador|Nome do Pagador)[:\s]*([^\(]+?)(?:\s*\(\*{3}|\s*RUA|\s*AVENIDA|\s*TRAVESSA|\s*LOTEAMENTO|-|CPF|CNPJ)/i;
+    const matchTitular = txt.match(regexTitular);
+    if (matchTitular) {
+      titular = matchTitular[1].trim().replace(/\s+/g, ' ');
+    }
+
+    // 4. PARCELAS (Regra: se vier 1/1 ou similar, converte para À VISTA)
+    const regexParcela = /\b(\d{1,3})\/(\d{1,3})\b/;
+    const matchParc = txt.match(regexParcela);
+    if (matchParc) {
+      let atual = parseInt(matchParc[1]);
+      let total = parseInt(matchParc[2]);
+      if (atual === 1 && total === 1) {
+        totalParcelas = "À VISTA";
+      } else {
+        totalParcelas = `${atual}/${total}`;
+      }
+    } else {
+      totalParcelas = "À VISTA";
+    }
+
+    // 5. DATAS E VALOR
+    const regexVencimento = /(?:Vencimento|Data de Vencimento|Vencimento[:\s]*)\s*(\d{2}\/\d{2}\/\d{4})/i;
+    const matchVencimento = txt.match(regexVencimento);
+    if (matchVencimento) dataVencimento = matchVencimento[1];
+
+    const regexEmissao = /(?:Data de[ ]?Emissão|Data do Documento|Processamento|Emissão|Data Processamento)[:\s]*(\d{2}\/\d{2}\/\d{4})/i;
+    const matchEmissao = txt.match(regexEmissao);
+    if (matchEmissao) dataEmissao = matchEmissao[1];
+
+    const regexValor = /(?:Valor do Documento|Valor Cobrado|Valor|Documento)[:\s]*(?:R\$)?\s*([\d\.,]+)/i;
+    const matchValor = txt.match(regexValor);
+    if (matchValor) valor = matchValor[1];
+
+    // TRATAMENTO DE FALHA
+    if (condominio === "N/A" || condominio.length < 2) { condominio = nomeArquivo; temFalha = true; }
+    if (unidadeBloco === "N/A") { unidadeBloco = nomeArquivo; temFalha = true; }
+    if (titular === "N/A" || titular.length < 2) { titular = nomeArquivo; temFalha = true; }
+
+    return { condominio, unidadeBloco, titular, totalParcelas, dataVencimento, dataEmissao, valor, temFalha };
+  }
+
+  document.getElementById('copyBtn').addEventListener('click', function() {
+    const textarea = document.getElementById('textoBrutoExcel');
+    textarea.select();
+    textarea.setSelectionRange(0, 99999);
+    try {
+      document.execCommand('copy');
+      const btn = document.getElementById('copyBtn');
+      btn.innerText = "✓ Copiado! Cole na Coluna A do Excel.";
+      btn.style.background = "#0056b3";
+      setTimeout(() => {
+        btn.innerText = "Copiar Linhas para o Excel";
+        btn.style.background = "#28a745";
+      }, 4000);
+    } catch (err) {
+      alert("Cópia bloqueada. Copie manualmente da caixa de texto.");
+    }
+  });
+</script>
+</body>
+</html>
