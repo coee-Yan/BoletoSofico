@@ -29,7 +29,7 @@
 
   h2 { color: #333; text-align: center; margin-bottom: 30px; }
 
-  /* Estilo do Botão Voltar Fixo */
+  /* Botão de Voltar */
   .btn-voltar {
     position: fixed;
     top: 20px;
@@ -47,7 +47,7 @@
   }
   .btn-voltar:hover { background-color: #5a6268; }
 
-  /* Área de Arrastar e Soltar Isolada */
+  /* Drag and Drop Zone */
   .drop-zone { 
     border: 2px dashed #007bff; 
     padding: 40px 20px; 
@@ -68,7 +68,7 @@
   
   #fileInput { display: none; }
 
-  /* Botão de Copiar */
+  /* Botão de Cópia */
   .btn-copiar {
     background: #28a745; 
     color: white; 
@@ -85,13 +85,11 @@
   .btn-copiar:hover { background: #218838; }
   .btn-copiar:disabled { background: #6c757d; cursor: not-allowed; }
 
-  /* Área de Resultados */
   #output { display: none; margin-bottom: 30px; }
   .status { font-weight: bold; color: #d32f2f; margin-bottom: 15px; font-size: 18px; text-align: center;}
   .result { background: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 20px; font-family: monospace; font-size: 13px; max-height: 250px; overflow-y: auto; line-height: 1.6; }
   textarea { width: 100%; height: 160px; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; white-space: pre; overflow-x: scroll; resize: vertical;}
   
-  /* Rodapé Fixo */
   .footer-version { 
     text-align: center; 
     font-size: 12px; 
@@ -110,12 +108,12 @@
 <div class="main-container">
   <h2>Leitor de Boletos - Sofico</h2>
   
-  <!-- Área de Interação -->
   <div class="drop-zone" id="dropZone">
     <span id="dropZoneText">Clique para selecionar ou arraste e solte os documentos aqui</span>
-    <div class="dica">Borderôs vão para o fim com a info na Coluna D, e falhas usam o nome do arquivo na última linha copiável.</div>
+    <div class="dica">Suporta múltiplos ficheiros em simultâneo. Borderôs e falhas vão para o final da lista.</div>
   </div>
   
+  <!-- Input para múltiplos ficheiros -->
   <input type="file" id="fileInput" accept=".pdf" multiple>
 
   <div id="output">
@@ -130,12 +128,13 @@
 </div>
 
 <div class="footer-version">
-    Versão: 2026-10-08 16:50
+    Versão Final - Código Enxuto e Guilhotina de Traço: 2026-10-09
 </div>
 
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
+  // Controlos de Drag and Drop
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
 
@@ -171,7 +170,7 @@
     const arquivosPdf = Array.from(files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
 
     if (arquivosPdf.length === 0) {
-      alert("Nenhum arquivo PDF válido selecionado.");
+      alert("Nenhum ficheiro PDF válido selecionado.");
       return;
     }
 
@@ -189,7 +188,7 @@
 
   async function processarArquivos(files) {
     document.getElementById('output').style.display = 'block';
-    document.getElementById('statusText').innerText = `Lendo e extraindo dados de ${files.length} boleto(s)...`;
+    document.getElementById('statusText').innerText = `A extrair dados de ${files.length} boleto(s)...`;
     document.getElementById('statusText').style.color = "#d32f2f";
     document.getElementById('previewText').innerHTML = "";
     document.getElementById('textoBrutoExcel').value = "";
@@ -218,13 +217,13 @@
         const textoUpper = textoCompleto.toUpperCase();
         const nomeUpper = nomeOriginal.toUpperCase();
         
-        // EXCEÇÃO 1: BORDERÔ
+        // BORDERÔS (Vão para o final com as colunas D, I e R preenchidas)
         if (textoUpper.includes("BORDERO COBRANCA") || nomeUpper.includes("BORDERO") || nomeUpper.includes("BORDERÔ")) {
           const colunasBordero = new Array(20).fill("");
-          colunasBordero[1] = nomeOriginal; // Col B
-          colunasBordero[3] = "Borderô";    // Col D
-          colunasBordero[8] = "Sim";        // Col I
-          colunasBordero[17] = "SOFICO";    // Col R
+          colunasBordero[1] = nomeOriginal; 
+          colunasBordero[3] = "Borderô";    
+          colunasBordero[8] = "Sim";        
+          colunasBordero[17] = "SOFICO";    
           
           linhasComFalha.push(colunasBordero.join("\t"));
           htmlPreview += `<strong style="color:#d9534f;">${f+1}. [BORDERÔ DETECTADO] Arquivo: ${nomeOriginal} (Movido para o fim)</strong><br><hr style="border:0; border-top: 1px solid #eee;">`;
@@ -233,6 +232,7 @@
         
         const dados = extrairDadosPorAncoras(textoCompleto, nomeOriginal);
 
+        // FORMATAÇÃO TSV PARA O EXCEL (Variáveis fixas Sim e SOFICO)
         const colunasExcel = new Array(20).fill(""); 
         colunasExcel[1] = dados.condominio;     // Col B
         colunasExcel[2] = dados.unidadeBloco;   // Col C
@@ -246,7 +246,7 @@
 
         const linhaFormatada = colunasExcel.join("\t");
 
-        // EXCEÇÃO 2: FALHAS
+        // FALHAS OU BOLETOS PERFEITOS
         if (dados.temFalha) {
           linhasComFalha.push(linhaFormatada);
           htmlPreview += `<strong style="color:#e67e22;">${f+1}. [ATENÇÃO - FALHA/N/A] Arquivo: ${nomeOriginal} (Movido para o fim)</strong><br><hr style="border:0; border-top: 1px solid #eee;">`;
@@ -276,7 +276,7 @@
     btnCopy.innerText = `Copiar Linhas para o Excel`;
   }
 
-  // NÚCLEO DE EXTRAÇÃO APRIMORADO (Âncoras e Delimitadores com Ajuste Fino para Col B e C)
+  // --- NÚCLEO LÓGICO ENXUTO ---
   function extrairDadosPorAncoras(texto, nomeArquivo) {
     const txt = texto.replace(/\s+/g, ' ');
 
@@ -284,49 +284,53 @@
     let dataVencimento = "N/A", dataEmissao = "N/A", valor = "N/A";
     let temFalha = false;
 
-    // 1. CONDOMÍNIO (Delimitado entre INFORMATIVO e o início de códigos/unidades ou PAGAMENTO/ACORDO)
-    const regexCondo = /INFORMATIVO\s*(.*?)\s*(?:PAGAMENTO|ACORDO)/i;
-    const matchCondo = txt.match(regexCondo);
-    if (matchCondo && matchCondo[1].trim().length > 2) {
-      let brutoCondo = matchCondo[1].trim();
+    // 1. CONDOMÍNIO E UNIDADE (Regra da Guilhotina Única, lendo da Esquerda para a Direita)
+    const regexInformativo = /INFORMATIVO\s*(.*?)\s*(?:PAGAMENTO|ACORDO|DESPESAS)/i;
+    const matchInfo = txt.match(regexInformativo);
+    
+    if (matchInfo && matchInfo[1].trim().length > 2) {
+      let bruto = matchInfo[1].trim();
       
-      // Remove códigos internos numéricos, lojas ou blocos colados (ex: 000412-8, - LOJA249, etc.) para isolar a Col B
-      brutoCondo = brutoCondo.replace(/[\s\-]+(\d{6}-\d|\d{4,}-\d|LOJA\d+|BLBL[\w\d]+).*$/, '').trim();
-      condominio = brutoCondo;
-    }
-
-    // 2. UNIDADE / BLOCO (Varredura robusta no topo e na morada para garantir preenchimento da Col C)
-    const regexCodTopo = /\b(\d{6}-\d)\b/;
-    const matchCodTopo = txt.match(regexCodTopo);
-    if (matchCodTopo) {
-      unidadeBloco = matchCodTopo[1];
-    } else {
-      const regexBlocoApto = /(?:BLBL|Bloco|Apto|AP\.?|LOJA)\s*[\w\d\-,\/]+/i;
-      const matchBlApto = txt.match(regexBlocoApto);
-      if (matchBlApto) {
-        unidadeBloco = matchBlApto[0].trim();
+      // A FACA: Encontra o primeiro traço com números/termos OU diretamente o termo de bloco
+      const regexCorte = /([\s\-]+\d{1,4}\s*\-\s*[A-Za-z0-9]+|[\s\-]*\b\d{5,6}\-[\w\d]+\b|[\s\-]+(?:BLBL|LOJA|AP\.?|BLOCO|BL\b|CJ\b|SALA\b|LOTE\b)|\b(?:BLBL|LOJA|BLOCO)\b|RECIBO:)/i;
+      const matchCorte = bruto.match(regexCorte);
+      
+      if (matchCorte) {
+         // Lado Esquerdo = Condomínio puro
+         condominio = bruto.substring(0, matchCorte.index).trim();
+         condominio = condominio.replace(/[\s\-]+$/, ''); // Remove hífen residual no final
+         
+         // Lado Direito = Unidade (Bl/Ap)
+         let sufixo = bruto.substring(matchCorte.index).trim();
+         sufixo = sufixo.replace(/RECIBO:[\s\d]+/i, '').trim(); // Deleta a intrusão do recibo
+         sufixo = sufixo.replace(/^[\s\-]+/, '').trim(); // Remove hífen/espaços iniciais
+         
+         if (sufixo !== "") unidadeBloco = sufixo;
       } else {
-        // Tenta capturar sufixos traçados no final do nome do condomínio (ex: - LOJA249 ou -000412-B)
-        const matchSufixo = txt.match(/INFORMATIVO\s*.*?(?:PAGAMENTO|ACORDO)/i);
-        if (matchSufixo) {
-          let trechoBruto = matchSufixo[0];
-          let matchTraco = trechoBruto.match(/[\-\s]+(LOJA\d+|[\w\d]+-[A-Z]|\d{6}-\d)/i);
-          if (matchTraco) {
-            unidadeBloco = matchTraco[1].trim();
-          }
-        }
+         condominio = bruto; // Se não encontrou o padrão de corte, o nome é contínuo
       }
     }
 
-    // 3. TITULAR (Delimitado entre "Pagador" e o marcador de CPF/Endereço, aceitando símbolos atípicos)
-    const regexTitular = /(?:Sacador\/Avalista|Sacado|Pagador|Nome do Pagador)[:\s]*([^\(]+?)(?:\s*\(\*{3}|\s*RUA|\s*AVENIDA|\s*TRAVESSA|\s*LOTEAMENTO|-|CPF|CNPJ)/i;
-    const matchTitular = txt.match(regexTitular);
-    if (matchTitular) {
-      titular = matchTitular[1].trim().replace(/\s+/g, ' ');
+    // Fallback restrito de Unidade (Apenas se o cabeçalho acima não continha de todo a unidade)
+    if (unidadeBloco === "N/A" || unidadeBloco === "") {
+      const regexCodTopo = /\b(\d{5,6}-[\w\d]+)\b/;
+      const matchCodTopo = txt.match(regexCodTopo);
+      if (matchCodTopo) {
+        unidadeBloco = matchCodTopo[1];
+      }
     }
 
-    // 4. PARCELAS (Regra: se vier 1/1 ou similar, converte para À VISTA)
-    const regexParcela = /\b(\d{1,3})\/(\d{1,3})\b/;
+    // 2. TITULAR (Trava inegociável na última ocorrência de "Pagador")
+    const regexTitular = /Pagador[\s:]+([A-Za-zÀ-ÿ0-9\s\/\?\.\-\&\'\,]+?)(?=\s*\(|\s+RUA\b|\s+AV\b|\s+AVENIDA\b|\s+TRAVESSA\b|\s+LOTEAMENTO\b|\s+ESTRADA\b|\s+ALAMEDA\b|\s+CEP\b|-CPF|-CNPJ)/gi;
+    const matchesTitular = [...txt.matchAll(regexTitular)];
+    if (matchesTitular.length > 0) {
+      let t = matchesTitular[matchesTitular.length - 1][1].trim(); // Foca na Ficha de Compensação (rodapé)
+      t = t.replace(/RECIBO DO PAGADOR.*/i, '').trim();
+      if (t.length > 2) titular = t;
+    }
+
+    // 3. PARCELAS 
+    const regexParcela = /PARCELA[:\s]*(\d{1,3})\/(\d{1,3})/i;
     const matchParc = txt.match(regexParcela);
     if (matchParc) {
       let atual = parseInt(matchParc[1]);
@@ -336,11 +340,9 @@
       } else {
         totalParcelas = `${atual}/${total}`;
       }
-    } else {
-      totalParcelas = "À VISTA";
     }
 
-    // 5. DATAS E VALOR
+    // 4. DATAS E VALOR (Âncoras fixas)
     const regexVencimento = /(?:Vencimento|Data de Vencimento|Vencimento[:\s]*)\s*(\d{2}\/\d{2}\/\d{4})/i;
     const matchVencimento = txt.match(regexVencimento);
     if (matchVencimento) dataVencimento = matchVencimento[1];
@@ -353,14 +355,15 @@
     const matchValor = txt.match(regexValor);
     if (matchValor) valor = matchValor[1];
 
-    // TRATAMENTO DE FALHA
+    // GESTÃO DE FALHAS VITAIS
     if (condominio === "N/A" || condominio.length < 2) { condominio = nomeArquivo; temFalha = true; }
-    if (unidadeBloco === "N/A") { unidadeBloco = nomeArquivo; temFalha = true; }
+    if (unidadeBloco === "N/A" || unidadeBloco === "") { unidadeBloco = nomeArquivo; temFalha = true; }
     if (titular === "N/A" || titular.length < 2) { titular = nomeArquivo; temFalha = true; }
 
     return { condominio, unidadeBloco, titular, totalParcelas, dataVencimento, dataEmissao, valor, temFalha };
   }
 
+  // Comportamento do Botão de Copiar
   document.getElementById('copyBtn').addEventListener('click', function() {
     const textarea = document.getElementById('textoBrutoExcel');
     textarea.select();
@@ -375,7 +378,7 @@
         btn.style.background = "#28a745";
       }, 4000);
     } catch (err) {
-      alert("Cópia bloqueada. Copie manualmente da caixa de texto.");
+      alert("A cópia automática falhou. Por favor, copie manualmente da caixa de texto.");
     }
   });
 </script>
